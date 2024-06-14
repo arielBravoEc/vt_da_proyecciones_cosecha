@@ -1,4 +1,6 @@
 from datetime import datetime, timedelta
+import streamlit as st
+
 # Define el background de la app
 BACKGROUND_COLOR = """
 <style>
@@ -131,5 +133,27 @@ TABLE_STYLE = {
     }
 
 
+farm_key = st.secrets["CLIENTE"]
+
+FARMS = None
+if farm_key == "NATURISA":
+    FARMS = ("CAMARONES NATURISA", "CAMINO REAL", "MARCHENA")
+elif farm_key == "PESFALAN":
+    FARMS = ("AGLIPESCA", "AGLIPESCA SUR", "MATORRILLOS", "PESFABUELE")
+else:
+    FARMS = ("CAMARONES NATURISA", "CAMINO REAL", "MARCHENA")
+
 DIAS_PROYECTO_DEFECTO =  83
 SOB_PROYECTO_DEFECTO = 0.48
+PESO_PROYECTO_DEFECTO = None
+
+if farm_key == "NATURISA":
+    DIAS_PROYECTO_DEFECTO =  83
+    SOB_PROYECTO_DEFECTO = 0.48
+    PESO_PROYECTO_DEFECTO = 33.25
+elif farm_key == "PESFALAN":
+    DIAS_PROYECTO_DEFECTO =  68
+    SOB_PROYECTO_DEFECTO = 0.71
+    PESO_PROYECTO_DEFECTO = 21.0
+
+

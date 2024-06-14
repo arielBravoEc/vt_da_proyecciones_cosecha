@@ -19,7 +19,7 @@ def get_evat_data(farm_name):
                 evat.densidad_siembra_cam_m2 as densidad_siembra_ind_m2,
                 evat.peso_siembra_gr,
                 evat.peso_actual_gr,
-                evat.kg_ab_ha_campo as kgab_dia,
+                evat.alimento_diario_total as kgab_dia,
                 evat.sobrevivencia,
                 evat.alimento_acumulado,
                 evat.sobrevivencia_actual_campo as porcentaje_sob_campo,

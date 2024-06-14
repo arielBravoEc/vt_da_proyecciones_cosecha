@@ -4,7 +4,7 @@ import streamlit as st
 import pandas as pd
 from utils.data_integration_helper import get_last
 
-def plot_table_with_filters_and_sort(data_df, state_key):
+def plot_table_with_filters_and_sort(data_df, state_key, project_weight):
     
     # Código JavaScript para aplicar estilos condicionales a toda la fila
     row_style_jscode = JsCode("""
@@ -33,6 +33,30 @@ def plot_table_with_filters_and_sort(data_df, state_key):
     data_df['IsMax'] =  data_df.groupby('Piscina')['ROI(%)'].transform(lambda x: x == x.max())
     data_df['IsMax_Up'] =  data_df.groupby('Piscina')['UP($/ha/dia)'].transform(lambda x: x == x.max())
 
+    # Función para encontrar el valor más cercano mayor o igual al valor buscado
+    def valor_mas_cercano(grupo, columna, valor):
+        valores_mayores = grupo[grupo[columna] >= valor]
+        if not valores_mayores.empty:
+            valor_min = valores_mayores[columna].min()
+            return grupo[columna] == valor_min
+        else:
+            return pd.Series([False] * len(grupo), index=grupo.index)
+    
+    def valor_mas_cercano_capacidad(grupo, columna):
+        valores_mayores = grupo[grupo[columna] >= grupo['capacidad_de_carga_lbs_ha']]
+        if not valores_mayores.empty:
+            valor_min = valores_mayores[columna].min()
+            return grupo[columna] == valor_min
+        else:
+            return pd.Series([False] * len(grupo), index=grupo.index)
+
+    data_df['IsProjectWeight'] = data_df.groupby('Piscina').apply(
+    lambda x: valor_mas_cercano(x, 'Peso (gr)', project_weight)
+    ).reset_index(level=0, drop=True)
+    data_df['IsLoadCapacity'] = data_df.groupby('Piscina').apply(
+    lambda x: valor_mas_cercano_capacidad(x, 'Biomasa (lb/ha)')
+    ).reset_index(level=0, drop=True)
+    print(data_df['IsProjectWeight'])
     # Definir la función de JavaScript para resaltar la celda con el valor máximo
     cellstyle_jscode_roi = JsCode("""
     function(params) {
@@ -52,15 +76,36 @@ def plot_table_with_filters_and_sort(data_df, state_key):
         }
     }
     """)
+    cellstyle_jscode_weight = JsCode("""
+    function(params) {
+        if (params.data.IsProjectWeight) {
+            return {'backgroundColor': 'rgba(136, 77, 227, 0.3)', 'color': 'black'};
+        } else {
+            return null;
+        }
+    }
+    """)
+    cellstyle_jscode_load_capacity = JsCode("""
+    function(params) {
+        if (params.data.IsLoadCapacity) {
+            return { 'color': 'red'};
+        } else {
+            return null;
+        }
+    }
+    """)
+
     # Crea un GridOptionsBuilder
     gb = GridOptionsBuilder.from_dataframe(data_df)
     # configuramos ancho de columnas
     gb.configure_column("Campo", header_name="CAMPO", maxWidth=181)
-    gb.configure_column("Piscina", header_name="PS", maxWidth=55)
+    gb.configure_column("Piscina", header_name="PS", maxWidth=64)
+    gb.configure_column("ha", header_name="HA", maxWidth=55, hide=True)
     gb.configure_column("Fecha Estimada Cosecha", header_name="FECHA ESTIMADA COSECHA", maxWidth=132, wrapHeaderText=True, autoHeaderHeight=True)
     gb.configure_column("Días", header_name="DIAS", maxWidth=65, wrapHeaderText=True, autoHeaderHeight=True)
-    gb.configure_column("Peso (gr)", header_name="PESO (GR)", maxWidth=70, wrapHeaderText=True, autoHeaderHeight=True)
-    gb.configure_column("Biomasa (lb/ha)", header_name="BIOMASA (LB/HA)", maxWidth=90, wrapHeaderText=True, autoHeaderHeight=True)
+    gb.configure_column("Peso (gr)", header_name="PESO (GR)", maxWidth=70, wrapHeaderText=True, autoHeaderHeight=True, cellStyle=cellstyle_jscode_weight)
+    gb.configure_column("Biomasa (lb/ha)", header_name="BIOMASA (LB/HA)", maxWidth=90, wrapHeaderText=True, autoHeaderHeight=True, cellStyle=cellstyle_jscode_load_capacity)
+    gb.configure_column("Biomasa Total (LB)", header_name="BIOMASA TOTAL(LB)", maxWidth=100, wrapHeaderText=True, autoHeaderHeight=True, hide=True )
     gb.configure_column("Sobrevivencia final", header_name="SOBRE. FINAL", maxWidth=80, wrapHeaderText=True, autoHeaderHeight=True)
     gb.configure_column("FCA", maxWidth=61, wrapHeaderText=True, autoHeaderHeight=True)
     gb.configure_column("Costo lb/camaron", header_name="COSTO LB/CAMARON", maxWidth=115, wrapHeaderText=True, autoHeaderHeight=True)
@@ -73,6 +118,9 @@ def plot_table_with_filters_and_sort(data_df, state_key):
     gb.configure_default_column(editable=False, filter=True, sortable=True)  # Habilita el filtrado y la ordenación en cada columna
     gb.configure_column("IsMax", hide=True)
     gb.configure_column("IsMax_Up", hide=True)
+    gb.configure_column("IsProjectWeight", hide=True)
+    gb.configure_column("capacidad_de_carga_lbs_ha", hide=True)
+    gb.configure_column("IsLoadCapacity", hide=True)
     gb.configure_selection(selection_mode='multiple', use_checkbox=True)
     gb.configure_grid_options(onSelectionChanged=checkbox_event_jscode, 
                               getRowStyle=row_style_jscode,
@@ -119,7 +167,7 @@ def plot_table_groupped(data_df):
              "costo_fijo_ha_dia": "COSTO FIJO ($/HA/DIA)",
              "costo_mix_alimento_kg": "COSTO MIX (KG)",
              "costo_millar_larva": "COSTO MILLAR",
-             "kgab_dia": "KG ABBB/DIA",
+             "kgab_dia": "KG AABB/DIA TOTAL",
              'fecha_muestreo': "ULTIMA FECHA MUESTREO"
              }
         , inplace=True)
@@ -134,7 +182,7 @@ def plot_table_groupped(data_df):
         "COSTO FIJO ($/HA/DIA)": "median",
         "COSTO MIX (KG)": "median",
         "COSTO MILLAR": "median",
-        "KG ABBB/DIA": "median"
+        "KG AABB/DIA TOTAL": "median"
     })
     data_df = data_df.sort_values(by="ÚLTIMO DÍA DATA REAL", ascending=False)
     data_df.reset_index(inplace=True)
@@ -144,16 +192,16 @@ def plot_table_groupped(data_df):
     # configuramos ancho de columnas
     gb.configure_column("PISCINA", maxWidth=100)
     gb.configure_column("FECHA SIEMBRA", maxWidth=140)
-    gb.configure_column("ULTIMA FECHA MUESTREO", maxWidth=140, wrapHeaderText=True, autoHeaderHeight=True)
+    gb.configure_column("ULTIMA FECHA MUESTREO", maxWidth=120, wrapHeaderText=True, autoHeaderHeight=True)
     gb.configure_column("ÚLTIMO DÍA DATA REAL", maxWidth=95, wrapHeaderText=True, autoHeaderHeight=True)
     gb.configure_column("PESO SIEMBRA", header_name="PESO SIEMBRA (GR)", maxWidth=95, wrapHeaderText=True, autoHeaderHeight=True)
     gb.configure_column("DENSIDAD SIEMBRA", header_name="DENSIDAD SIEMBRA (IND/M2)", maxWidth=100, wrapHeaderText=True, autoHeaderHeight=True)
     gb.configure_column("ÚLTIMO PESO TOMADO",  maxWidth=110, wrapHeaderText=True, autoHeaderHeight=True)
     gb.configure_column("CREC ULT 4 SEMANAS", maxWidth=100, wrapHeaderText=True, autoHeaderHeight=True)
-    gb.configure_column("COSTO FIJO ($/HA/DIA)",  maxWidth=105, wrapHeaderText=True, autoHeaderHeight=True)
-    gb.configure_column("COSTO MIX (KG)",  maxWidth=107, wrapHeaderText=True, autoHeaderHeight=True )
+    gb.configure_column("COSTO FIJO ($/HA/DIA)",  maxWidth=100, wrapHeaderText=True, autoHeaderHeight=True)
+    gb.configure_column("COSTO MIX (KG)",  maxWidth=100, wrapHeaderText=True, autoHeaderHeight=True )
     gb.configure_column("COSTO MILLAR", maxWidth=100, wrapHeaderText=True, autoHeaderHeight=True )
-    gb.configure_column("KG ABBB/DIA",  maxWidth=155, wrapHeaderText=True, autoHeaderHeight=True )
+    gb.configure_column("KG AABB/DIA TOTAL",  maxWidth=135, wrapHeaderText=True, autoHeaderHeight=True )
     gb.configure_pagination(paginationAutoPageSize=False, enabled=False)  # Habilita la paginación
     gb.configure_default_column(editable=False, filter=True, sortable=True)  # Habilita el filtrado y la ordenación en cada columna
     #gb.configure_selection(selection_mode='multiple', use_checkbox=True)

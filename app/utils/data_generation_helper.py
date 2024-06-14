@@ -5,6 +5,10 @@ import math
 from constants.general import VARIABLES_INTERES
 from fpdf import FPDF
 import base64
+import io
+import datetime
+import calendar
+import pytz
 ### creamos id
 def get_id(Campo, Ps, FechaSiembra):
     return Campo + "-" + str(Ps) + "-" + str(FechaSiembra)[0:10]
@@ -159,29 +163,102 @@ def generate_proyection(data_df, project_survival, project_duration,price_df: pd
     return data_df
 
 
-# Función para exportar el DataFrame a PDF
-def export_df_to_pdf(df, filename):
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", size=12)
 
-    # Ancho de las celdas
-    col_width = pdf.w / (len(df.columns) + 1)
-    
-    # Agregar los nombres de las columnas
-    for col in df.columns:
-        pdf.cell(40, 10, col, 1)
-    pdf.ln()
-    
-    
-    # Agregar las filas del DataFrame
-    for index, row in df.iterrows():
+class PDF(FPDF):
+    def header(self):
+        self.set_font('Arial', 'B', 14)
+        self.cell(0, 10, 'PROYECCIONES DE COSECHA', 0, 1, 'C')
+
+    def chapter_title(self, title):
+        self.set_font('Arial', 'B', 12)
+        self.cell(0, 10, title, 0, 1, 'L')
+        self.ln(10)
+
+    def add_dataframe(self, df, col_widths_dict):
+        self.set_font('Arial', size=8)
+        # Obtener los nombres de las columnas y sus anchos
+        columns = list(df.columns)
+        col_widths = [col_widths_dict[col] if col in col_widths_dict else 30 for col in columns]
+        row_height = self.font_size * 1.5
+
+        # Configuración de colores y estilos solo para el encabezado
+        self.set_fill_color(200, 220, 255)  # color de fondo para el encabezado (RGB)
+        self.set_text_color(0, 0, 0)  # color de texto para el encabezado (RGB)
+        self.set_font('Arial', 'B', 10)
+
+        # Agregar los encabezados del DataFrame
+        for i, col in enumerate(df.columns):
+            self.cell(col_widths[i], row_height, col, border=1, fill=True, align='C')
+        self.ln(row_height)
+
+        # Restaurar colores y estilos por defecto para el contenido de las celdas
+        self.set_fill_color(255, 255, 255)  # color de fondo blanco para el contenido
+        self.set_text_color(0, 0, 0)  # color de texto negro para el contenido
+        self.set_font('Arial', '', 8)
+
+        # Agregar las filas del DataFrame
+        for row in df.itertuples(index=False):
+            for i, cell in enumerate(row):
+                self.cell(col_widths[i], row_height, str(cell), border=1, align='C')
+            self.ln(row_height)
+
+    def calculate_col_widths(self, df):
+        max_width = self.w - 2 * self.l_margin
+        num_cols = len(df.columns)
+        col_widths = []
+
         for col in df.columns:
-            pdf.cell(col_width, 10, str(row[col]), border=1)
-        pdf.ln()
-    
-    # Guardar el PDF
-    pdf.output(filename)
+            col_width = max_width / num_cols
+            col_widths.append(col_width)
+
+        return col_widths
+
+# Función para exportar el DataFrame a PDF
+def export_df_to_pdf(df):
+    df_print = df.drop(columns=["IsMax", 'IsMax_Up', 'aguaje', 'tipo_proyeccion', 'IsProjectWeight', 'ROI(%)', 'Precio venta pesca final ($/Kg)', 'capacidad_de_carga_lbs_ha', 'IsLoadCapacity'])
+    df_print.rename(columns={
+        "Fecha Estimada Cosecha": 'Fecha Cosecha',
+        "Sobrevivencia final": "Sob. Final",
+        "Precio venta pesca final ($/Kg)": "Precio venta",
+        "Piscina": "PS."
+    }, inplace=True)
+    pdf = PDF()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.add_page(orientation='L')  # Establecer orientación horizontal ('L'andscape)
+    ecuador_timezone = pytz.timezone('America/Guayaquil')
+    # Obtener la fecha y hora actual en UTC
+    now_utc = datetime.datetime.now(tz=pytz.utc)
+    # Convertir la fecha y hora a la zona horaria de Ecuador
+    now_ecuador = now_utc.astimezone(ecuador_timezone)
+    # Obtener el nombre del mes en español
+    nombre_mes = now_ecuador.strftime('%B')
+
+    fecha_formateada = f"{now_ecuador.day} de {nombre_mes} {now_ecuador.year} a las {now_ecuador.strftime('%H:%M')}"
+    pdf.chapter_title(fecha_formateada)
+    col_widths_dict = {
+    'Campo': 38,
+    'PS.': 12,
+    'ha': 16,
+    'Fecha Cosecha': 28,
+    'Días': 13,
+    'Peso (gr)': 18,
+    'Biomasa (lb/ha)': 29,
+    "Biomasa Total (LB)": 34,
+    'Sob. Final': 20,
+    'FCA': 12,
+    'Costo lb/camaron': 32,
+    'UP($/ha/dia)': 25,
+    #'Precio venta final': 25
+    # Añadir más columnas según sea necesario
+}
+    pdf.add_dataframe(df_print, col_widths_dict)
+
+    # Guardar el PDF en un buffer
+    buffer = io.BytesIO()
+    pdf_output = pdf.output(dest='S').encode('latin1')
+    buffer.write(pdf_output)
+    buffer.seek(0)
+    return buffer
 
 def export_df_to_pdfv2(df, filename):
     df_print = df.drop(columns=["IsMax", 'IsMax_Up', 'aguaje'])

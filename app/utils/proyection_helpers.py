@@ -9,7 +9,8 @@ import pandas as pd
 
 
 
-def get_projections(farm_name, project_duration=90,  project_survival=0.75, project_range=21, is_using_personalized_cost=False, is_using_personalized_price=False, prices_table=None, cost_info=False):
+def get_projections(farm_name, project_duration=90,  project_survival=0.75, project_range=21, is_using_personalized_cost=False, is_using_personalized_price=False, prices_table=None, cost_info=False, 
+                    is_using_personalized_load_capacity=False, load_capacity=None):
 
     # importamos los datos de la base de datos del evat
     data_df = get_evat_data(farm_name)
@@ -24,6 +25,8 @@ def get_projections(farm_name, project_duration=90,  project_survival=0.75, proj
         data_df['costo_mix_alimento_kg'] = cost_info['mix']
         data_df['costo_millar_larva'] = cost_info['millar']
         data_df['costo_fijo_ha_dia'] = cost_info['fijo']
+    if is_using_personalized_load_capacity:
+        data_df['capacidad_de_carga_lbs_ha'] = load_capacity
     ## configuramos los nuevos precios en caso de ser personalizado
     if is_using_personalized_price:
         precios_df = prices_table
@@ -123,8 +126,15 @@ def get_projections(farm_name, project_duration=90,  project_survival=0.75, proj
                     'Precio venta pesca final ($/kg)' : "precio_venta_pesca"
                         })
     proyecciones_df = proyecciones_df.sort_values(by=["piscina", "fecha_estimada_cosecha"])
+    proyecciones_df['fecha_estimada_cosecha'] =proyecciones_df['fecha_estimada_cosecha'].astype(str)
+    proyecciones_df['fecha_estimada_cosecha'] =proyecciones_df['fecha_estimada_cosecha'].str.slice(0, 10)
+    proyecciones_df['fecha_siembra'] =proyecciones_df['fecha_siembra'].astype(str)
+    proyecciones_df['fecha_siembra'] =proyecciones_df['fecha_siembra'].str.slice(0, 10)
+    proyecciones_df['fecha_muestreo'] =proyecciones_df['fecha_muestreo'].astype(str)
+    proyecciones_df['fecha_muestreo'] =proyecciones_df['fecha_muestreo'].str.slice(0, 10)
+    proyecciones_df['biomasa_total'] = proyecciones_df['biomasa']*proyecciones_df['ha']
+    
     return proyecciones_df
-
 
 def get_prices_dataframe():
     precios_df = get_excel_data( sheet_name='precios')

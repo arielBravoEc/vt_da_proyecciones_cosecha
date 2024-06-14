@@ -1,5 +1,5 @@
 import streamlit as st
-from constants.general import BACKGROUND_COLOR, CARD_CSS,CARD_CSS_V2, container_css,PRIMARY_COLOR,PRIMARY_COLOR_BACKGROUND,DIAS_PROYECTO_DEFECTO,SOB_PROYECTO_DEFECTO
+from constants.general import BACKGROUND_COLOR, CARD_CSS,CARD_CSS_V2, container_css,PRIMARY_COLOR,PRIMARY_COLOR_BACKGROUND,DIAS_PROYECTO_DEFECTO,SOB_PROYECTO_DEFECTO,FARMS,PESO_PROYECTO_DEFECTO
 from utils.proyection_helpers import get_projections
 from utils.data_integration_helper import get_last
 from utils.data_generation_helper import export_df_to_pdf, export_df_to_pdfv2
@@ -16,12 +16,16 @@ import altair as alt
 from st_aggrid import AgGrid, GridOptionsBuilder, JsCode, AgGridTheme, GridUpdateMode
 from streamlit_modal import Modal
 import time
+from fpdf import FPDF
+import io
 
-
-
+# st.write("### DataFrame")
 st.set_page_config(layout="wide", initial_sidebar_state=st.session_state.setdefault("sidebar_state","collapsed"),)
 # Usamos st.markdown para inyectar el CSS 
 st.markdown(BACKGROUND_COLOR, unsafe_allow_html=True)
+
+
+
 
 # Inicializar estado de la aplicación
 if 'data' not in st.session_state:
@@ -50,6 +54,11 @@ if 'prices_selected_rows' not in st.session_state:
 # Inicializar la variable de estado para controlar la visibilidad del panel lateral
 if 'show_sidebar' not in st.session_state:
     st.session_state.show_sidebar = False
+if 'use_personalize_load_capacity' not in st.session_state:
+    st.session_state.use_personalize_load_capacity = None
+if 'load_capacity' not in st.session_state:
+    st.session_state.load_capacity = None
+
 
 st.markdown(
     '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"/>',
@@ -109,6 +118,14 @@ def get_btn():
         if grid_table['data'] is not None:
             st.session_state.prices_selected_rows = pd.DataFrame(grid_table['data'])
         st.session_state.use_personalize_config_prices = st.checkbox("Usar esta configuración de precios")
+        
+    st.write("#### Capacidad de carga:")
+    st.session_state.load_capacity = st.number_input("Ingrese Capacidad de carga (Lb/ha)", min_value=0.0, max_value=15000.0, value=0.0, step=500.0)
+    st.session_state.use_personalize_load_capacity = st.checkbox("Usar esta configuración de capacidad de carga")
+    st.write("#### Proyección de alimento:")
+    st.session_state.use_lineal_feed = st.checkbox("Usar alimentación lineal", value=True)
+    st.session_state.use_lineal_feed_dynamic = st.checkbox("Usar alimentación con aumento porcentual semanal", value=False)
+    
 with st.sidebar:
     get_btn()
 #st.write(st.session_state)
@@ -124,7 +141,7 @@ modal = Modal(key="example_modal", title="Cosechas Seleccionadas", max_width=120
 
 
 st.title("Proyecciones de cosechas")
-st.text("La herramienta ofrece valiosas estimaciones para guiar sus decisiones, pero es esencial considerarla como una recomendación, \nya que factores externos pueden influir en los resultados.")
+st.text("La herramienta ofrece valiosas estimaciones para guiar sus decisiones, pero es esencial considerarla como una recomendación, \nya que hay factores externos que pueden influir en los resultados.")
 
 st.markdown(container_css, unsafe_allow_html=True)
 
@@ -152,13 +169,12 @@ with stylable_container(
         with col1:
             farm_selection = st.selectbox(
              "Seleccione el campo",
-             ("CAMARONES NATURISA", "CAMINO REAL", "MARCHENA"))
-            range_days = st.number_input("Seleccione Rango Proyecto", min_value=0, max_value=90, value=21, step=1)
+             FARMS)
+            project_weight_selection = st.number_input("Seleccione Peso Proyecto", min_value=0.0, max_value=60.0, value=PESO_PROYECTO_DEFECTO, step=1.0)
         with col2:
             sob = st.number_input("Seleccione Sobrevivencia Proyecto", min_value=0.0, max_value=1.0, value=SOB_PROYECTO_DEFECTO, step=0.05)
             # Botón para controlar la apertura/cierre del panel
-            show_panel = False
-            # Crear un botón en la barra lateral
+            range_days = st.number_input("Seleccione Rango Proyecto", min_value=0, max_value=90, value=21, step=1)
             
         with col3:
             duration = st.number_input("Seleccione Días Proyecto", min_value=0, max_value=100, value=DIAS_PROYECTO_DEFECTO, step=1)
@@ -182,7 +198,7 @@ with col_button_proy:
     css_styles=f"""
         button p:before {{
             font-family: 'Font Awesome 5 Free';
-            content: '\f133';
+            content: '\f1c1';
             display: inline-block;
             padding-right: 3px;
             padding-left: 3px;
@@ -198,10 +214,13 @@ with col_button_proy:
                     #data = get_projections(farm_name=farm_selection,project_duration=duration, project_survival=sob, project_range=range_days)
                     flag_use_cost = False
                     flag_use_prices = False
+                    flag_use_load_capacity = False
                     if st.session_state.use_personalize_config_costos:
                         flag_use_cost = True
                     if st.session_state.use_personalize_config_prices:
                         flag_use_prices = True
+                    if st.session_state.use_personalize_load_capacity:
+                        flag_use_load_capacity = True
                         
                     st.session_state.data = get_projections(farm_name=farm_selection,project_duration=duration, project_survival=sob, project_range=range_days,
                     is_using_personalized_cost = flag_use_cost,
@@ -211,7 +230,9 @@ with col_button_proy:
                         "mix": st.session_state.costo_mix,
                         "millar": st.session_state.costo_larva,
                         "fijo": st.session_state.costo_fijo,
-                    }
+                    },
+                    is_using_personalized_load_capacity = flag_use_load_capacity,
+                    load_capacity = st.session_state.load_capacity
                     )
         
         
@@ -278,15 +299,16 @@ if st.session_state.data is not None:
              "costo": "Costo lb/camaron", 
              "up": "UP($/ha/dia)", 
              "roi": "ROI(%)",  
-             "precio_venta_pesca": "Precio venta pesca final ($/Kg)"
+             "precio_venta_pesca": "Precio venta pesca final ($/Kg)",
+             "biomasa_total": "Biomasa Total (LB)"
              }
         , inplace=True)
-        data_v2 = data_proyecciones[[ "Campo","Piscina", "Fecha Estimada Cosecha",
-                           "Días","Peso (gr)","Biomasa (lb/ha)","Sobrevivencia final",
+        data_v2 = data_proyecciones[[ "Campo","Piscina", "ha", "Fecha Estimada Cosecha",
+                           "Días","Peso (gr)","Biomasa (lb/ha)","Biomasa Total (LB)", "Sobrevivencia final",
                            "FCA","Costo lb/camaron","UP($/ha/dia)","ROI(%)",
-                           "Precio venta pesca final ($/Kg)","tipo_proyeccion", "aguaje",]].round(2)
+                           "Precio venta pesca final ($/Kg)","tipo_proyeccion", "aguaje", "capacidad_de_carga_lbs_ha"]].round(2)
 
-        plot_table_with_filters_and_sort(data_v2, 'selected_rows')
+        plot_table_with_filters_and_sort(data_v2, 'selected_rows', project_weight_selection)
              
     if st.session_state.data is not None: 
             if st.button("Abrir Selección"):
@@ -295,25 +317,34 @@ if st.session_state.data is not None:
             # Display the modal
             if modal.is_open():
                 with modal.container():
-                    with stylable_container(
-                    key="container_with_border_button",
-                    css_styles=r"""
-                        button p:before {
-                            font-family: 'Font Awesome 5 Free';
-                            content: '\f6ad';
-                            display: inline-block; 
-                            padding-right: 3px;
-                            padding-left: 3px;
-                            vertical-align: middle;
-                            font-weight: 900;
-                        }
-                        """,
-                    ):
-                        st.dataframe(st.session_state.selected_rows)   
+                    
+                        st.dataframe(st.session_state.selected_rows.drop(["aguaje", "IsMax", "IsMax_Up", "IsProjectWeight", "ROI(%)", "capacidad_de_carga_lbs_ha", 'IsLoadCapacity'], axis=1))   
                         # Crear un botón para exportar el DataFrame a PDF
                         #if st.button('Exportar a PDF'):
                             #export_df_to_pdf(st.session_state.selected_rows, 'proyecciones.pdf')
-                        st.markdown(export_df_to_pdfv2(st.session_state.selected_rows, 'dataframe.pdf'), unsafe_allow_html=True)
+                
+                        buffer = export_df_to_pdf(st.session_state.selected_rows)
+                        with stylable_container(
+                        key="container_with_border_button",
+                        css_styles=r"""
+                            button p:before {
+                                font-family: 'Font Awesome 5 Free';
+                                content: '\f1c1';
+                                display: inline-block; 
+                                padding-right: 3px;
+                                padding-left: 3px;
+                                vertical-align: middle;
+                                font-weight: 900;
+                            }
+                            """,
+                        ):
+                            st.download_button(
+                                label="Descargar PDF",
+                                data=buffer,
+                                file_name="proyecciones.pdf",
+                                mime="application/pdf"
+                            )
+                        
 
 
     st.markdown(
