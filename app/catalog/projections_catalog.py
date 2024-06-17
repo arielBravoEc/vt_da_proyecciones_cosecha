@@ -1,15 +1,19 @@
-import psycopg2
+# import psycopg2
 import pandas as pd
 import os
-
+import streamlit as st
+from sqlalchemy import create_engine
 
 
 def get_evat_data(farm_name):
-    #CREDENCIALES
+    # CREDENCIALES
     print("Intentando conectarse a la base de datos")
-    conexion = psycopg2.connect(host="35.237.206.192", database="db-vtp-nic-prd", user="analytics_read", password="ufG!4%#8R$") # conexion remota
-    print("Conexión exitosa")
-    data_df = pd.read_sql_query(f"""
+    string_conection = (f'postgresql+pg8000://{st.secrets["USER"]}:{st.secrets["PASSWORD"]}@'
+                        f'{st.secrets["HOST"]}:5432/{st.secrets["DATABASE"]}'
+                        )
+    # Crear el motor de SQLAlchemy
+    engine = create_engine(string_conection)
+    query = f"""
             select evat.nombre_campo as campo,
                 evat.piscina,
                 evat.fecha_siembra,
@@ -39,20 +43,23 @@ def get_evat_data(farm_name):
                 evat.precio_larva as costo_millar_larva,
                 evat.capacidad_de_carga_lbs_ha,
                 cl.razon_social as cliente
-                from productivo.evat_calculado_vista as evat  
-			left join cliente.cliente as cl 
-	   			on evat.codigo_cliente = cl.codigo
+                from productivo.evat_calculado_vista as evat
+            left join cliente.cliente as cl
+                on evat.codigo_cliente = cl.codigo
             where UPPER(evat.nombre_campo) = '{farm_name}'
-                and evat.fecha_siembra >= '2024-01-01' 
+                and evat.fecha_siembra >= '2024-01-01'
                 and evat.piscina not like '%PRE%'
                         """
-        , con=conexion) 
+    print("Conexión exitosa")
+    data_df = pd.read_sql_query(query, engine)
     return data_df
 
 
 def get_excel_data(sheet_name=None, skiprows=None, usecols=None):
     dir_actual = os.getcwd()
-    print("Ruta del directorio actual:", dir_actual)
+    # print("Ruta del directorio actual:", dir_actual)
     ruta_excel = os.path.join(dir_actual, "app", "static", "data", "datos_evatv2.xlsm")
-    data_df = pd.read_excel(ruta_excel, sheet_name=sheet_name, skiprows=skiprows, usecols=usecols)
+    data_df = pd.read_excel(
+        ruta_excel, sheet_name=sheet_name, skiprows=skiprows, usecols=usecols
+    )
     return data_df

@@ -1,10 +1,11 @@
 from streamlit_extras.stylable_container import stylable_container
 import streamlit as st
 
+
 def get_button_with_icon(icon_title, icon_code=None):
     with stylable_container(
-    key="container_with_border",
-    css_styles=f"""
+        key="container_with_border",
+        css_styles=f"""
         button p:before {{
             font-family: 'Font Awesome 5 Free';
             content: {icon_code};

@@ -2,6 +2,7 @@ aenum==3.1.15
 altair==4.2.2
 appdirs==1.4.4
 APScheduler==3.10.4
+asn1crypto==1.5.1
 attrs==23.2.0
 azure-core==1.30.2
 azure-storage-blob==12.20.0
@@ -37,6 +38,7 @@ fuzzywuzzy==0.18.0
 gender-guesser==0.4.0
 gitdb==4.0.11
 GitPython==3.1.43
+greenlet==3.0.3
 htbuilder==0.6.2
 html_text==0.6.2
 idna==3.7
@@ -77,14 +79,13 @@ pandas==2.2.2
 parsedatetime==2.6
 pathmagic==0.3.14
 pathspec==0.12.1
+pg8000==1.31.2
 pillow==10.3.0
 platformdirs==4.2.2
 prettierfier==1.0.3
 proglog==0.1.10
 prometheus_client==0.20.0
 protobuf==4.25.3
-psycopg2==2.9.9
-psycopg2-binary==2.9.9
 pyarrow==16.1.0
 pycodestyle==2.11.1
 pycparser==2.22
@@ -117,11 +118,13 @@ requests==2.32.3
 requests-oauthlib==2.0.0
 rich==13.7.1
 rpds-py==0.18.1
+scramp==1.4.5
 Send2Trash==1.8.3
 simplejson==3.19.2
 six==1.16.0
 smmap==5.0.1
 soupsieve==2.5
+SQLAlchemy==2.0.30
 st-annotated-text==4.0.1
 st-theme==1.2.3
 streamlit==1.35.0
