@@ -3,7 +3,7 @@ name: Sync Branches
 on:
   push:
     branches:
-      - master  # Reemplaza "main" con la rama de origen de tu elección
+      - origin/master  # Reemplaza "main" con la rama de origen de tu elección
 
 jobs:
   sync:
@@ -13,7 +13,7 @@ jobs:
     - name: Checkout source branch
       uses: actions/checkout@v4
       with:
-        ref: master  # Reemplaza "main" con la rama de origen de tu elección
+        ref: origin/master  # Reemplaza "main" con la rama de origen de tu elección
 
     - name: Setup Git
       run: |
