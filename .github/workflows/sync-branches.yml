@@ -1,4 +1,4 @@
-name: Update branches on push to master
+name: Push to Specified Branches
 
 on:
   push:
@@ -6,21 +6,25 @@ on:
       - master
 
 jobs:
-  update-branches:
+  push_to_specified_branches:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        branches:
+          - branch11
+          - branch22
+          - branch33
+          # Agrega más ramas aquí según sea necesario
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Set up Git
-        run: |
-         git config --global user.name 'github-actions[bot]'
-         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+      - name: List branches
+        run: git branch -a
 
-      - name: Create and update branches
+      - name: Create and push to specified branches
         run: |
-          BRANCHES=("branch1" "branch2" "branch3")  # Lista de ramas a actualizar
-          for branch in "${BRANCHES[@]}"; do
-            git checkout -B $branch  # Crear la rama si no existe, o reescribir si existe
-            git push origin $branch --force-with-lease
+          for branch in "${{ matrix.branches }}"; do
+            git checkout -B $branch origin/$branch || git checkout -b $branch
+            git push --force origin $branch
           done
