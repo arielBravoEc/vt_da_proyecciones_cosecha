@@ -11,9 +11,9 @@ jobs:
     strategy:
       matrix:
         branches:
-          - branch11
-          - branch22
-          - branch33
+          - pesfalan
+          - naturisa
+          - eguiguren
           # Agrega más ramas aquí según sea necesario
     steps:
       - name: Checkout repository
