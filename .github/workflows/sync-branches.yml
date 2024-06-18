@@ -1,41 +1,50 @@
-name: Sync Branches v2
+name: Update Branches
 
 on:
   push:
     branches:
-      - master  # Reemplaza "main" con la rama de origen de tu elección
+      - master
 
 jobs:
-  sync:
+  update-branches:
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        branch: [eguigurenv2, naturisav2, pesfalanv2]  # Lista de ramas que deseas actualizar
+
     steps:
-    - name: Checkout source branch
-      uses: actions/checkout@v4
-      with:
-        ref: master  # Reemplaza "main" con la rama de origen de tu elección
+      - name: Checkout master branch
+        uses: actions/checkout@v2
+        with:
+          ref: master
 
-    - name: Setup Git
-      run: |
-        git config --global user.name 'github-actions[bot]'
-        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-    
-    - name: Fetch all branches
-      run: |
-        git fetch --all
+      - name: Set up Git
+        run: |
+          git config --global user.name 'github-actions'
+          git config --global user.email 'github-actions@github.com'
 
-    - name: Sync branches
-      env:
-        ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
-      run: |
-        git remote set-url origin https://x-access-token:${{ secrets.ACTIONS_PAT }}@github.com/arielBravoEc/vt_da_proyecciones_cosecha.git
-        # Lista de ramas a las que quieres hacer push
-        branches_to_sync="origin/eguiguren origin/naturisa origin/pesfalan"
-        for branch in $branches_to_sync; do
-          git checkout $branch || git checkout -b $branch
-          if ! git merge master --allow-unrelated-histories --no-edit; then
-            git merge --abort
-            git reset --hard origin/main
+      - name: Fetch all branches
+        run: git fetch --all
+
+      - name: Check if branch exists
+        id: check_branch
+        run: |
+          if git rev-parse --verify --quiet ${{ matrix.branch }}; then
+            echo "::set-output name=branch_exists::true"
+          else
+            echo "::set-output name=branch_exists::false"
           fi
-          git push origin $branch --force
-        done
+
+      - name: Create branch if it doesn't exist
+        if: steps.check_branch.outputs.branch_exists == 'false'
+        run: |
+          git checkout -b ${{ matrix.branch }}
+          git push origin ${{ matrix.branch }}
+
+      - name: Update branch
+        if: steps.check_branch.outputs.branch_exists == 'true'
+        run: |
+          git checkout ${{ matrix.branch }}
+          git merge master
+          git push origin ${{ matrix.branch }}
