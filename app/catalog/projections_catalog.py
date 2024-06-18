@@ -8,9 +8,10 @@ from sqlalchemy import create_engine
 def get_evat_data(farm_name):
     # CREDENCIALES
     print("Intentando conectarse a la base de datos")
-    string_conection = (f'postgresql+pg8000://{st.secrets["USER"]}:{st.secrets["PASSWORD"]}@'
-                        f'{st.secrets["HOST"]}:5432/{st.secrets["DATABASE"]}'
-                        )
+    string_conection = (
+        f'postgresql+pg8000://{st.secrets["USER"]}:{st.secrets["PASSWORD"]}@'
+        f'{st.secrets["HOST"]}:5432/{st.secrets["DATABASE"]}'
+    )
     # Crear el motor de SQLAlchemy
     engine = create_engine(string_conection)
     query = f"""

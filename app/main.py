@@ -101,8 +101,8 @@ modal = Modal(key="example_modal", title="Cosechas Seleccionadas", max_width=120
 
 st.title("Proyecciones de cosechas")
 st.write(
-    "La herramienta ofrece valiosas estimaciones para guiar sus decisiones, pero es esencial" +
-    " considerarla como una recomendación, ya que hay factores externos que pueden influir en los resultados."
+    "La herramienta ofrece valiosas estimaciones para guiar sus decisiones, pero es esencial"
+    + " considerarla como una recomendación, ya que hay factores externos que pueden influir en los resultados."
 )
 
 
