@@ -27,6 +27,9 @@ jobs:
 
       - name: Fetch all branches
         run: git fetch --all
+      
+      - name: Pull latest changes from master
+        run: git pull origin master
 
       - name: Check if branch exists
         id: check_branch
@@ -41,7 +44,6 @@ jobs:
         if: steps.check_branch.outputs.branch_exists == 'false'
         run: |
           git checkout -b ${{ matrix.branch }}
-          git pull origin master
           git push origin ${{ matrix.branch }}
 
       - name: Update branch
