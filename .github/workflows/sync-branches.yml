@@ -11,7 +11,7 @@ jobs:
 
     steps:
     - name: Checkout source branch
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         ref: master  # Reemplaza "main" con la rama de origen de tu elección
 
