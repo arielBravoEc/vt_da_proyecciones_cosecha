@@ -28,6 +28,7 @@ jobs:
       env:
         ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
       run: |
+        git remote set-url origin https://x-access-token:${{ secrets.ACTIONS_PAT }}@github.com/arielBravoEc/vt_da_proyecciones_cosecha.git
         # Lista de ramas a las que quieres hacer push
         branches_to_sync="origin/eguiguren origin/naturisa origin/pesfalan"
         for branch in $branches_to_sync; do
