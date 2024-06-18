@@ -44,6 +44,7 @@ jobs:
         if: steps.check_branch.outputs.branch_exists == 'false'
         run: |
           git checkout -b ${{ matrix.branch }}
+          git pull origin master
           git push origin ${{ matrix.branch }}
 
       - name: Update branch
