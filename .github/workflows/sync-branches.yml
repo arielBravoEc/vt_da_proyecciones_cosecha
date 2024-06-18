@@ -1,4 +1,4 @@
-name: Sync Branches
+name: Sync Branches v2
 
 on:
   push:
