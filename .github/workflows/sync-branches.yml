@@ -23,6 +23,7 @@ jobs:
         run: |
           git config --global user.name 'github-actions'
           git config --global user.email 'github-actions@github.com'
+          git config --global credential.helper '!f() { echo "username=github-actions"; echo "password=${ACTIONS_PAT}"; }; f'
 
       - name: Fetch all branches
         run: git fetch --all
