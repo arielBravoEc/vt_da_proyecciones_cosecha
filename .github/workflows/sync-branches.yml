@@ -3,7 +3,7 @@ name: Sync Branches
 on:
   push:
     branches:
-      - origin/master  # Reemplaza "main" con la rama de origen de tu elección
+      - master  # Reemplaza "main" con la rama de origen de tu elección
 
 jobs:
   sync:
@@ -13,7 +13,7 @@ jobs:
     - name: Checkout source branch
       uses: actions/checkout@v4
       with:
-        ref: origin/master  # Reemplaza "main" con la rama de origen de tu elección
+        ref: master  # Reemplaza "main" con la rama de origen de tu elección
 
     - name: Setup Git
       run: |
@@ -30,6 +30,6 @@ jobs:
         branches_to_sync="origin/eguiguren origin/naturisa origin/pesfalan"
         for branch in $branches_to_sync; do
           git checkout $branch || git checkout -b $branch
-          git merge origin/master --no-edit
+          git merge master --no-edit
           git push origin $branch
         done
