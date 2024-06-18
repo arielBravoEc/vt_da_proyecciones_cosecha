@@ -30,6 +30,9 @@ jobs:
         branches_to_sync="origin/eguiguren origin/naturisa origin/pesfalan"
         for branch in $branches_to_sync; do
           git checkout $branch || git checkout -b $branch
-          git merge master --allow-unrelated-histories --no-edit
-          git push origin $branch
+          if ! git merge master --allow-unrelated-histories --no-edit; then
+            git merge --abort
+            git reset --hard origin/main
+          fi
+          git push origin $branch --force
         done
