@@ -14,6 +14,7 @@ jobs:
           - pesfalan
           - naturisa
           - eguiguren
+          - acuarios
           # Agrega más ramas aquí según sea necesario
     steps:
       - name: Checkout repository
