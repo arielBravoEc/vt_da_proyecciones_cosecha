@@ -281,24 +281,24 @@ def plot_table_groupped(data_df):
         },
         inplace=True,
     )
+    print(data_df.columns)
     data_df = data_df.groupby("PISCINA").agg(
-        {
-            "FECHA SIEMBRA": get_last,
-            "ULTIMA FECHA MUESTREO": get_last,
-            "ÚLTIMO DÍA DATA REAL": "median",
-            "PESO SIEMBRA": "median",
-            "DENSIDAD SIEMBRA": "median",
-            "ÚLTIMO PESO TOMADO": "median",
-            "CREC ULT 4 SEMANAS": "median",
-            "ÚLTIMA SOB. CAMPO": "median",
-            "COSTO FIJO ($/HA/DIA)": "median",
-            "COSTO MIX (KG)": "median",
-            "COSTO MILLAR": "median",
-            "KG AABB/DIA TOTAL": "median",
-            "ALIMENTO ACUMULADO KG": "median"
-            
-        }
-    )
+    {
+        "FECHA SIEMBRA": get_last,
+        "ULTIMA FECHA MUESTREO": get_last,
+        "ÚLTIMO DÍA DATA REAL": "median",
+        "PESO SIEMBRA": "median",
+        "DENSIDAD SIEMBRA": "median",
+        "ÚLTIMO PESO TOMADO": "median",
+        "CREC ULT 4 SEMANAS": "median",
+        "ÚLTIMA SOB. CAMPO": "median",
+        "COSTO FIJO ($/HA/DIA)": "median",
+        "COSTO MIX (KG)": "median",
+        "COSTO MILLAR": "median",
+        "KG AABB/DIA TOTAL": "median",
+        "ALIMENTO ACUMULADO KG": "median"
+    }
+)
     data_df = data_df.sort_values(by="ÚLTIMO DÍA DATA REAL", ascending=False)
     data_df.reset_index(inplace=True)
     data_df = data_df.round(2)
