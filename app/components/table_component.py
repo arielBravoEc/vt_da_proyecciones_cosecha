@@ -261,6 +261,7 @@ def plot_table_with_filters_and_sort(data_df, state_key, project_weight):
 
 def plot_table_groupped(data_df):
     data_df['porcentaje_sob_campo'] = data_df['porcentaje_sob_campo']*100
+    data_df['sobrevivencia_consumo'] = data_df['sobrevivencia_consumo']*100
     data_df.rename(
         columns={
             "campo": "CAMPO",
@@ -277,11 +278,11 @@ def plot_table_groupped(data_df):
             "kgab_dia": "KG AABB/DIA TOTAL",
             "fecha_muestreo": "ULTIMA FECHA MUESTREO",
             "alimento_acumulado": "ALIMENTO ACUMULADO KG",
-            "porcentaje_sob_campo": "ÚLTIMA SOB. CAMPO"
+            "porcentaje_sob_campo": "ÚLTIMA SOB. CAMPO",
+            "sobrevivencia_consumo": "ÚLTIMA SOB. CONSUMO"
         },
         inplace=True,
     )
-    print(data_df.columns)
     data_df = data_df.groupby("PISCINA").agg(
     {
         "FECHA SIEMBRA": get_last,
@@ -292,6 +293,7 @@ def plot_table_groupped(data_df):
         "ÚLTIMO PESO TOMADO": "median",
         "CREC ULT 4 SEMANAS": "median",
         "ÚLTIMA SOB. CAMPO": "median",
+        "ÚLTIMA SOB. CONSUMO": "median",
         "COSTO FIJO ($/HA/DIA)": "median",
         "COSTO MIX (KG)": "median",
         "COSTO MILLAR": "median",
@@ -358,6 +360,9 @@ def plot_table_groupped(data_df):
     )
     gb.configure_column(
         "ÚLTIMA SOB. CAMPO", maxWidth=90, wrapHeaderText=True, autoHeaderHeight=True
+    )
+    gb.configure_column(
+        "ÚLTIMA SOB. CONSUMO", maxWidth=100, wrapHeaderText=True, autoHeaderHeight=True
     )
     gb.configure_pagination(
         paginationAutoPageSize=False, enabled=False

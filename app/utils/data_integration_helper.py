@@ -31,6 +31,7 @@ def group_and_get_last_week_by_pool(data_df):
             "id_piscina": get_last,
             "tipo_alimento_std": get_last,
             "capacidad_de_carga_lbs_ha": get_last,
+            "sobrevivencia_consumo": get_last,
         }
     )
     evat_ultima_semana_df = evat_ultima_semana_df.reset_index(drop=True)
@@ -64,6 +65,7 @@ def group_and_get_last_week_by_pool(data_df):
             "id_piscina": get_last,
             "tipo_alimento_std": get_last,
             "capacidad_de_carga_lbs_ha": get_last,
+            "sobrevivencia_consumo": get_last,
         }
     )
     return evat_ultima_semana_df

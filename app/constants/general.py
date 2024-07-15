@@ -42,6 +42,7 @@ VARIABLES_INTERES = [
     "kgab_dia",
     "alimento_acumulado",
     "capacidad_de_carga_lbs_ha",
+    "sobrevivencia_consumo"
 ]
 
 

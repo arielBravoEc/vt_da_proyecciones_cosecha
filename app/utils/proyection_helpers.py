@@ -54,6 +54,7 @@ def get_projections(
     evat_consolidado = clean_nulls_and_fill_nan(data_df)
     # analizamos las variables para encontrar errores
     evat_consolidado = clean_no_sense_values(evat_consolidado)
+    
     # creamos id
     evat_consolidado["id"] = np.vectorize(get_id)(
         evat_consolidado["campo"],

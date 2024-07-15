@@ -43,6 +43,7 @@ def get_evat_data(farm_name):
                 evat.precio_mix as costo_mix_alimento_kg,
                 evat.precio_larva as costo_millar_larva,
                 evat.capacidad_de_carga_lbs_ha,
+                evat.sobrevivencia_consumo,
                 cl.razon_social as cliente
                 from productivo.evat_calculado_vista as evat
             left join cliente.cliente as cl
@@ -54,6 +55,7 @@ def get_evat_data(farm_name):
                         """
     print("Conexión exitosa")
     data_df = pd.read_sql_query(query, engine)
+    
     return data_df
 
 
