@@ -98,6 +98,7 @@ def get_projections(
         is_using_lineal_feed=is_using_lineal_feed,
         percentage_dynamical_feed=percentage_dynamical_feed,
     )
+    print(evat_df.columns)
     proyecciones_df = evat_df[VARIABLES_INTERES]
     evat__hacia_atras_df = evat_df.copy()
     progress_text = f"Generando {project_range} proyecciones hacia adelante"

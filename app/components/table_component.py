@@ -260,6 +260,7 @@ def plot_table_with_filters_and_sort(data_df, state_key, project_weight):
 
 
 def plot_table_groupped(data_df):
+    data_df['porcentaje_sob_campo'] = data_df['porcentaje_sob_campo']*100
     data_df.rename(
         columns={
             "campo": "CAMPO",
@@ -275,6 +276,8 @@ def plot_table_groupped(data_df):
             "costo_millar_larva": "COSTO MILLAR",
             "kgab_dia": "KG AABB/DIA TOTAL",
             "fecha_muestreo": "ULTIMA FECHA MUESTREO",
+            "alimento_acumulado": "ALIMENTO ACUMULADO KG",
+            "porcentaje_sob_campo": "ÚLTIMA SOB. CAMPO"
         },
         inplace=True,
     )
@@ -287,10 +290,13 @@ def plot_table_groupped(data_df):
             "DENSIDAD SIEMBRA": "median",
             "ÚLTIMO PESO TOMADO": "median",
             "CREC ULT 4 SEMANAS": "median",
+            "ÚLTIMA SOB. CAMPO": "median",
             "COSTO FIJO ($/HA/DIA)": "median",
             "COSTO MIX (KG)": "median",
             "COSTO MILLAR": "median",
             "KG AABB/DIA TOTAL": "median",
+            "ALIMENTO ACUMULADO KG": "median"
+            
         }
     )
     data_df = data_df.sort_values(by="ÚLTIMO DÍA DATA REAL", ascending=False)
@@ -346,6 +352,12 @@ def plot_table_groupped(data_df):
     )
     gb.configure_column(
         "KG AABB/DIA TOTAL", maxWidth=95, wrapHeaderText=True, autoHeaderHeight=True
+    )
+    gb.configure_column(
+        "ALIMENTO ACUMULADO KG", maxWidth=109, wrapHeaderText=True, autoHeaderHeight=True
+    )
+    gb.configure_column(
+        "ÚLTIMA SOB. CAMPO", maxWidth=90, wrapHeaderText=True, autoHeaderHeight=True
     )
     gb.configure_pagination(
         paginationAutoPageSize=False, enabled=False

@@ -3,7 +3,7 @@ import streamlit as st
 
 
 # FECHA ACTUAL
-FECHA_ACTUAL = datetime.now()
+FECHA_ACTUAL = datetime.now() - timedelta(days=60)
 # FECHA MINIMA DEL ULTIMO DATO: ES DECIR SI UNA PISCINA ESTá CON SU ULTIMO DATO
 # MAS DE N DIAS DESACTUALIZADO, NO SE LO TOMA EN CUENTA A ESA PISCINA PARA LA PROY
 FECHA_MINIMA_ULTIMO_DATO = (FECHA_ACTUAL - timedelta(days=30)).strftime("%Y-%m-%d")
@@ -42,6 +42,7 @@ VARIABLES_INTERES = [
     "kgab_dia",
     "alimento_acumulado",
     "capacidad_de_carga_lbs_ha",
+    "porcentaje_sob_campo"
 ]
 
 
