@@ -8,8 +8,9 @@ from st_aggrid import (
 from constants.css_constants import TABLE_STYLE
 import streamlit as st
 import pandas as pd
+import numpy as np
 from utils.data_integration_helper import get_last
-
+from utils.data_generation_helper import create_sob_and_ind_in_column
 
 def plot_table_with_filters_and_sort(data_df, state_key, project_weight):
 
@@ -260,8 +261,14 @@ def plot_table_with_filters_and_sort(data_df, state_key, project_weight):
 
 
 def plot_table_groupped(data_df):
+    ### calculamos los invididuos actuales de campo y consumo
+    data_df['ind_campo'] = data_df['porcentaje_sob_campo']* data_df['densidad_siembra']
+    data_df['ind_consumo'] = data_df['sobrevivencia_consumo']* data_df['densidad_siembra']
     data_df['porcentaje_sob_campo'] = data_df['porcentaje_sob_campo']*100
     data_df['sobrevivencia_consumo'] = data_df['sobrevivencia_consumo']*100
+    data_df['sobrevivencia_consumo'] = round(data_df['sobrevivencia_consumo'],1)
+    data_df['porcentaje_sob_campo'] = np.vectorize(create_sob_and_ind_in_column)(data_df['porcentaje_sob_campo'],data_df['ind_campo'])
+    data_df['sobrevivencia_consumo'] = np.vectorize(create_sob_and_ind_in_column)(data_df['sobrevivencia_consumo'],data_df['ind_consumo'])
     data_df.rename(
         columns={
             "campo": "CAMPO",
@@ -292,13 +299,13 @@ def plot_table_groupped(data_df):
         "DENSIDAD SIEMBRA": "median",
         "ÚLTIMO PESO TOMADO": "median",
         "CREC ULT 4 SEMANAS": "median",
-        "ÚLTIMA SOB. CAMPO": "median",
-        "ÚLTIMA SOB. CONSUMO": "median",
+        "ÚLTIMA SOB. CAMPO": get_last,
+        "ÚLTIMA SOB. CONSUMO": get_last,
         "COSTO FIJO ($/HA/DIA)": "median",
         "COSTO MIX (KG)": "median",
         "COSTO MILLAR": "median",
         "KG AABB/DIA TOTAL": "median",
-        "ALIMENTO ACUMULADO KG": "median"
+        "ALIMENTO ACUMULADO KG": "median",
     }
 )
     data_df = data_df.sort_values(by="ÚLTIMO DÍA DATA REAL", ascending=False)
@@ -313,12 +320,12 @@ def plot_table_groupped(data_df):
     )
     gb.configure_column(
         "ULTIMA FECHA MUESTREO",
-        maxWidth=120,
+        maxWidth=100,
         wrapHeaderText=True,
         autoHeaderHeight=True,
     )
     gb.configure_column(
-        "ÚLTIMO DÍA DATA REAL", maxWidth=95, wrapHeaderText=True, autoHeaderHeight=True
+        "ÚLTIMO DÍA DATA REAL", maxWidth=90, wrapHeaderText=True, autoHeaderHeight=True
     )
     gb.configure_column(
         "PESO SIEMBRA",
@@ -359,10 +366,10 @@ def plot_table_groupped(data_df):
         "ALIMENTO ACUMULADO KG", maxWidth=109, wrapHeaderText=True, autoHeaderHeight=True
     )
     gb.configure_column(
-        "ÚLTIMA SOB. CAMPO", maxWidth=90, wrapHeaderText=True, autoHeaderHeight=True
+        "ÚLTIMA SOB. CAMPO", maxWidth=140, wrapHeaderText=True, autoHeaderHeight=True
     )
     gb.configure_column(
-        "ÚLTIMA SOB. CONSUMO", maxWidth=100, wrapHeaderText=True, autoHeaderHeight=True
+        "ÚLTIMA SOB. CONSUMO", maxWidth=140, wrapHeaderText=True, autoHeaderHeight=True
     )
     gb.configure_pagination(
         paginationAutoPageSize=False, enabled=False

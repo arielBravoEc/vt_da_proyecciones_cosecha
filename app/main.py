@@ -239,9 +239,136 @@ if st.session_state.data is not None:
 
     data = st.session_state.data
     data_proyecciones = data.copy()
-    with stylable_container(
-        key="container_with_borderv3",
-        css_styles="""
+    if len(data_proyecciones) > 0:
+        with stylable_container(
+            key="container_with_borderv3",
+            css_styles="""
+                    {
+                        background-color: white;
+                        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                        transition: transform 0.2s;
+                        border: 1px solid rgba(49, 51, 63, 0.2);
+                        border-radius: 10px;
+                        padding: calc(1em - 1px);
+                        max-width: 100%; /* Ajustar el ancho máximo al 100% del contenedor padre */
+                        max-height: 350px; /* Ajustar la altura máxima según sea necesario */
+                        overflow: hidden; /* Ocultar cualquier desbordamiento inicial */
+                        overflow-y: auto; /* Permitir desplazamiento vertical */
+                        display: flex; /* Usar flexbox para manejar mejor el contenido */
+                        flex-direction: column; /* Alinear elementos en columna */
+                    }
+                    """,
+        ):
+
+            st.write("##### DATOS REALES")
+            data_grouped = data.copy()
+            plot_table_groupped(data_grouped)
+        with stylable_container(
+            key="container_with_borderv5",
+            css_styles="""
+                {
+                    background-color: white !important;
+                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                    transition: transform 0.2s;
+                    border: 1px solid rgba(49, 51, 63, 0.2);
+                    border-radius: 10px;
+                    padding: calc(1em - 1px);
+                    max-width: 100%; /* Ajustar el ancho máximo al 100% del contenedor padre */
+                    max-height: 600px; /* Ajustar la altura máxima según sea necesario */
+                    overflow: hidden; /* Ocultar cualquier desbordamiento inicial */
+                    overflow-y: auto; /* Permitir desplazamiento vertical */
+                    display: flex; /* Usar flexbox para manejar mejor el contenido */
+                    flex-direction: column; /* Alinear elementos en columna */
+                }
+                    """,
+        ):
+            st.write("##### PROYECCIONES")
+
+            data_proyecciones.rename(
+                columns={
+                    "campo": "Campo",
+                    "piscina": "Piscina",
+                    "fecha_estimada_cosecha": "Fecha Estimada Cosecha",
+                    "dias": "Días",
+                    "peso": "Peso (gr)",
+                    "biomasa": "Biomasa (lb/ha)",
+                    "sobrevivencia": "Sobrevivencia final",
+                    "fca": "FCA",
+                    "costo": "Costo lb/camaron",
+                    "up": "UP($/ha/dia)",
+                    "roi": "ROI(%)",
+                    "precio_venta_pesca": "Precio venta pesca final ($/Kg)",
+                    "biomasa_total": "Biomasa Total (LB)",
+                },
+                inplace=True,
+            )
+            data_v2 = data_proyecciones[
+                [
+                    "Campo",
+                    "Piscina",
+                    "ha",
+                    "Fecha Estimada Cosecha",
+                    "Días",
+                    "Peso (gr)",
+                    "Biomasa (lb/ha)",
+                    "Biomasa Total (LB)",
+                    "Sobrevivencia final",
+                    "FCA",
+                    "Costo lb/camaron",
+                    "UP($/ha/dia)",
+                    "ROI(%)",
+                    "Precio venta pesca final ($/Kg)",
+                    "tipo_proyeccion",
+                    "aguaje",
+                    "capacidad_de_carga_lbs_ha",
+                ]
+            ].round(2)
+
+            plot_table_with_filters_and_sort(
+                data_v2, "selected_rows", project_weight_selection
+            )
+
+        if st.session_state.data is not None:
+            with stylable_container(
+                key="container_with_border_button_seleccion",
+                css_styles=r"""
+                        button p:before {
+                            font-family: 'Font Awesome 5 Free';
+                            content: '\f07c';
+                            display: inline-block;
+                            padding-right: 3px;
+                            padding-left: 3px;
+                            vertical-align: middle;
+                            font-weight: 900;
+                        }
+                        """,
+            ):
+                if st.button("Abrir Selección"):
+                    modal.open()
+
+            # mostramos el modal en caso de que se haga click en abrir
+            if modal.is_open():
+                with modal.container():
+                    show_modal()
+
+        st.markdown(
+            """
+        <style>
+        .reportview-container .main .block-container{
+            max-width: 80%;215
+            padding-top: 5rem;
+            padding-right: 5rem;
+            padding-left: 5rem;
+            padding-bottom: 5rem;
+        }
+        </style>
+        """,
+            unsafe_allow_html=True,
+        )
+
+        with stylable_container(
+            key="container_with_borderv2",
+            css_styles="""
                 {
                     background-color: white;
                     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -250,152 +377,29 @@ if st.session_state.data is not None:
                     border-radius: 10px;
                     padding: calc(1em - 1px);
                     max-width: 100%; /* Ajustar el ancho máximo al 100% del contenedor padre */
-                    max-height: 350px; /* Ajustar la altura máxima según sea necesario */
+                    max-height: 600px; /* Ajustar la altura máxima según sea necesario */
                     overflow: hidden; /* Ocultar cualquier desbordamiento inicial */
                     overflow-y: auto; /* Permitir desplazamiento vertical */
                     display: flex; /* Usar flexbox para manejar mejor el contenido */
                     flex-direction: column; /* Alinear elementos en columna */
                 }
                 """,
-    ):
-
-        st.write("##### DATOS REALES")
-        data_grouped = data.copy()
-        plot_table_groupped(data_grouped)
-    with stylable_container(
-        key="container_with_borderv5",
-        css_styles="""
-            {
-                background-color: white !important;
-                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-                transition: transform 0.2s;
-                border: 1px solid rgba(49, 51, 63, 0.2);
-                border-radius: 10px;
-                padding: calc(1em - 1px);
-                max-width: 100%; /* Ajustar el ancho máximo al 100% del contenedor padre */
-                max-height: 600px; /* Ajustar la altura máxima según sea necesario */
-                overflow: hidden; /* Ocultar cualquier desbordamiento inicial */
-                overflow-y: auto; /* Permitir desplazamiento vertical */
-                display: flex; /* Usar flexbox para manejar mejor el contenido */
-                flex-direction: column; /* Alinear elementos en columna */
-            }
-                """,
-    ):
-        st.write("##### PROYECCIONES")
-
-        data_proyecciones.rename(
-            columns={
-                "campo": "Campo",
-                "piscina": "Piscina",
-                "fecha_estimada_cosecha": "Fecha Estimada Cosecha",
-                "dias": "Días",
-                "peso": "Peso (gr)",
-                "biomasa": "Biomasa (lb/ha)",
-                "sobrevivencia": "Sobrevivencia final",
-                "fca": "FCA",
-                "costo": "Costo lb/camaron",
-                "up": "UP($/ha/dia)",
-                "roi": "ROI(%)",
-                "precio_venta_pesca": "Precio venta pesca final ($/Kg)",
-                "biomasa_total": "Biomasa Total (LB)",
-            },
-            inplace=True,
-        )
-        data_v2 = data_proyecciones[
-            [
-                "Campo",
-                "Piscina",
-                "ha",
-                "Fecha Estimada Cosecha",
-                "Días",
-                "Peso (gr)",
-                "Biomasa (lb/ha)",
-                "Biomasa Total (LB)",
-                "Sobrevivencia final",
-                "FCA",
-                "Costo lb/camaron",
-                "UP($/ha/dia)",
-                "ROI(%)",
-                "Precio venta pesca final ($/Kg)",
-                "tipo_proyeccion",
-                "aguaje",
-                "capacidad_de_carga_lbs_ha",
-            ]
-        ].round(2)
-
-        plot_table_with_filters_and_sort(
-            data_v2, "selected_rows", project_weight_selection
-        )
-
-    if st.session_state.data is not None:
-        with stylable_container(
-            key="container_with_border_button_seleccion",
-            css_styles=r"""
-                    button p:before {
-                        font-family: 'Font Awesome 5 Free';
-                        content: '\f07c';
-                        display: inline-block;
-                        padding-right: 3px;
-                        padding-left: 3px;
-                        vertical-align: middle;
-                        font-weight: 900;
-                    }
-                    """,
         ):
-            if st.button("Abrir Selección"):
-                modal.open()
-
-        # mostramos el modal en caso de que se haga click en abrir
-        if modal.is_open():
-            with modal.container():
-                show_modal()
-
-    st.markdown(
-        """
-    <style>
-    .reportview-container .main .block-container{
-        max-width: 80%;215
-        padding-top: 5rem;
-        padding-right: 5rem;
-        padding-left: 5rem;
-        padding-bottom: 5rem;
-    }
-    </style>
-    """,
-        unsafe_allow_html=True,
-    )
-
-    with stylable_container(
-        key="container_with_borderv2",
-        css_styles="""
-            {
-                background-color: white;
-                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-                transition: transform 0.2s;
-                border: 1px solid rgba(49, 51, 63, 0.2);
-                border-radius: 10px;
-                padding: calc(1em - 1px);
-                max-width: 100%; /* Ajustar el ancho máximo al 100% del contenedor padre */
-                max-height: 600px; /* Ajustar la altura máxima según sea necesario */
-                overflow: hidden; /* Ocultar cualquier desbordamiento inicial */
-                overflow-y: auto; /* Permitir desplazamiento vertical */
-                display: flex; /* Usar flexbox para manejar mejor el contenido */
-                flex-direction: column; /* Alinear elementos en columna */
-            }
-            """,
-    ):
-        col1, col2 = st.columns(2)
-        pools = tuple(data_proyecciones["Piscina"].unique())
-        with col1:
-            st.session_state.pool_selection = st.selectbox("Piscina", pools)
-        with col2:
-            st.session_state.variable_selection = st.selectbox(
-                "Variable a analizar",
-                (
-                    "Costo lb/camaron",
-                    "UP($/ha/dia)",
-                    "ROI(%)",
-                    "Precio venta pesca final ($/Kg)",
-                ),
-            )
-        plot_line_chart(data_proyecciones, st.session_state.variable_selection)
+            col1, col2 = st.columns(2)
+            pools = tuple(data_proyecciones["Piscina"].unique())
+            with col1:
+                st.session_state.pool_selection = st.selectbox("Piscina", pools)
+            with col2:
+                st.session_state.variable_selection = st.selectbox(
+                    "Variable a analizar",
+                    (
+                        "Costo lb/camaron",
+                        "UP($/ha/dia)",
+                        "ROI(%)",
+                        "Precio venta pesca final ($/Kg)",
+                    ),
+                )
+            plot_line_chart(data_proyecciones, st.session_state.variable_selection)
+    else:
+        #no hay datos
+        st.warning('Para este campo no existen datos de piscinas actualizadas en los últimos 30 días.', icon="⚠️")

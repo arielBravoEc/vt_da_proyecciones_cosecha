@@ -1,7 +1,11 @@
 import streamlit as st
 from st_aggrid import AgGrid, GridOptionsBuilder, AgGridTheme, GridUpdateMode
 import pandas as pd
-
+from constants.general import (
+    COSTO_MIX_DEFECTO,
+    COSTO_MILLAR_DEFECTO,
+    COSTO_FIJO_DEFECTO
+)
 
 # CUANDO USAMOS EL ULTIMO ALIMENTO PARA LA PROYECCION
 def update_lineal_feed():
@@ -21,17 +25,17 @@ def sidebar():
         "Ingrese Costo mix alimento (kg)",
         min_value=0.0,
         max_value=15.0,
-        value=1.2,
+        value=COSTO_MIX_DEFECTO,
         step=0.1,
     )
     st.session_state.costo_larva = st.number_input(
-        "Ingrese Costo millar larva", min_value=0.0, max_value=15.0, value=1.2, step=0.1
+        "Ingrese Costo millar larva", min_value=0.0, max_value=30.0, value=COSTO_MILLAR_DEFECTO, step=0.1
     )
     st.session_state.costo_fijo = st.number_input(
         "Ingrese Costo Fijo ($/ha/día)",
         min_value=0.0,
         max_value=70.0,
-        value=30.0,
+        value=COSTO_FIJO_DEFECTO,
         step=0.1,
     )
     st.session_state.use_personalize_config_costos = st.checkbox(

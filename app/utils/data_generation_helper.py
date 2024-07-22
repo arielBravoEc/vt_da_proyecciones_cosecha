@@ -7,6 +7,11 @@ import datetime
 import pytz
 
 
+
+def create_sob_and_ind_in_column(sob_column, ind_column):
+    return str(sob_column) + " % | " + str(round(ind_column,1)) + " ind/m2"
+
+
 # creamos id
 def get_id(Campo, Ps, FechaSiembra):
     return Campo + "-" + str(Ps) + "-" + str(FechaSiembra)[0:10]
@@ -382,3 +387,5 @@ def export_to_xlsx(datos_df):
     # Convertir el DataFrame a CSV
     excel = to_excel(datos_df)
     return excel
+
+

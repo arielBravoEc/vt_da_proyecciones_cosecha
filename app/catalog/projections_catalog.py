@@ -50,6 +50,7 @@ def get_evat_data(farm_name):
                 on evat.codigo_cliente = cl.codigo
             where UPPER(evat.nombre_campo) = '{farm_name}'
                 and evat.fecha_siembra >= '2024-01-01'
+
                 and evat.piscina not like '%PRE%'
                         """
     print("Conexión exitosa")

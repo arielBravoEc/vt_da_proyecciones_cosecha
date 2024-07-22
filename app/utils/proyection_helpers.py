@@ -231,5 +231,7 @@ def get_projections(
     proyecciones_df["biomasa_total"] = (
         proyecciones_df["biomasa"] * proyecciones_df["ha"]
     )
-
+    print("-----------")
+    print(proyecciones_df[(proyecciones_df['dias'] == 87) & (proyecciones_df['piscina'] == '23')][['alimento_acumulado']])
+    print(proyecciones_df[(proyecciones_df['dias'] == 86) & (proyecciones_df['piscina'] == '17')][['alimento_acumulado']])
     return proyecciones_df
