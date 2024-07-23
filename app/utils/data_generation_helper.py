@@ -147,6 +147,8 @@ def generate_proyection(
     dias_ciclo_finales=None,
     is_using_lineal_feed=True,
     percentage_dynamical_feed=None,
+    is_using_sob_campo=True,
+    percentage_sob=0
 ):
     if not dias_ciclo_finales:
         data_df["Días restantes para cumplir proyecto"] = data_df[
@@ -168,12 +170,21 @@ def generate_proyection(
     data_df["Mortalidad semanal"] = (
         (100 - (project_survival * 100)) / project_duration
     ) * 7
-    data_df["Sobrevivencia final de ciclo proyecto (%)"] = (
-        data_df["porcentaje_sob_campo"] * 100
+    if not is_using_sob_campo:
+        # si usa la sob de consumo
+        data_df["Sobrevivencia final de ciclo proyecto (%)"] = (
+        (data_df["sobrevivencia_consumo"]  * 100) + percentage_sob
     ) - (
         (data_df["Días restantes para cumplir proyecto"] / 7)
         * data_df["Mortalidad semanal"]
     )
+    else:
+        data_df["Sobrevivencia final de ciclo proyecto (%)"] = (
+            (data_df["porcentaje_sob_campo"] * 100) + percentage_sob
+        ) - (
+            (data_df["Días restantes para cumplir proyecto"] / 7)
+            * data_df["Mortalidad semanal"]
+        )
     data_df["Biomasa proyecto (lb/ha)"] = (
         (data_df["Sobrevivencia final de ciclo proyecto (%)"] / 100)
         * (data_df["densidad_siembra_ind_m2"])

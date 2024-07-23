@@ -29,8 +29,11 @@ def get_projections(
     load_capacity=None,
     is_using_lineal_feed=False,
     percentage_dynamical_feed=None,
+    is_using_sob_campo=False,
+    percentage_sob=0,
 ):
-
+    print(is_using_sob_campo)
+    print(percentage_sob)
     # importamos los datos de la base de datos del evat
     data_df = get_evat_data(farm_name)
     # importamos datos de precios
@@ -98,8 +101,10 @@ def get_projections(
         distribucion_tallas_df,
         is_using_lineal_feed=is_using_lineal_feed,
         percentage_dynamical_feed=percentage_dynamical_feed,
+        is_using_sob_campo=is_using_sob_campo,
+        percentage_sob=percentage_sob,
     )
-    print(evat_df.columns)
+    #print(evat_df.columns)
     proyecciones_df = evat_df[VARIABLES_INTERES]
     evat__hacia_atras_df = evat_df.copy()
     progress_text = f"Generando {project_range} proyecciones hacia adelante"
@@ -118,6 +123,8 @@ def get_projections(
             dias_ciclo_finales=1,
             is_using_lineal_feed=is_using_lineal_feed,
             percentage_dynamical_feed=percentage_dynamical_feed,
+            is_using_sob_campo=is_using_sob_campo,
+            percentage_sob=percentage_sob,
         )
         proyecciones_df = pd.concat(
             [proyecciones_df, evat_df[VARIABLES_INTERES]], ignore_index=True
@@ -143,6 +150,8 @@ def get_projections(
             dias_ciclo_finales=-1,
             is_using_lineal_feed=is_using_lineal_feed,
             percentage_dynamical_feed=percentage_dynamical_feed,
+            is_using_sob_campo=is_using_sob_campo,
+            percentage_sob=percentage_sob,
         )
         proyecciones_df = pd.concat(
             [proyecciones_df, evat_df[VARIABLES_INTERES]], ignore_index=True

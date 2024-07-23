@@ -194,6 +194,7 @@ def plot_table_with_filters_and_sort(data_df, state_key, project_weight):
         wrapHeaderText=True,
         autoHeaderHeight=True,
         cellStyle=cellstyle_jscode_roi,
+        hide=True
     )
     gb.configure_column(
         "Precio venta pesca final ($/Kg)",

@@ -12,6 +12,15 @@ def update_lineal_feed():
     if st.session_state.checkbox_lineal_feed:
         st.session_state.checkbox_dinamycal_feed = False
 
+# actualizamos el checkbox cuando el usuario selecciona sobrevivencia de campo
+def update_sob_campo():
+    if st.session_state.checkbox_sob_campo:
+        st.session_state.checkbox_sob_consumo = False
+# actualizamos el checkbox cuando el usuario selecciona sobrevivencia de consumo
+def update_sob_consumo():
+    if st.session_state.checkbox_sob_consumo:
+        st.session_state.checkbox_sob_campo = False
+
 
 # CUANDO AL ULTIMO ALIMENTO LE AGREGAMOS UN PORCENTAJE
 def update_dynamic_feed():
@@ -98,3 +107,17 @@ def sidebar():
         "Ingrese el porcentaje de aumento de alimento: ", 0, 30, 5
     )
     st.write("Aumento del", st.session_state.percentage_dynamical_feed, "%")
+    st.write("#### Sobrevivencia:")
+    st.checkbox(
+        "Usar sobreviencia campo",
+        key="checkbox_sob_campo",
+        on_change=update_sob_campo,
+    )
+    st.checkbox(
+        "Usar sobreviencia consumo",
+        key="checkbox_sob_consumo",
+        on_change=update_sob_consumo,
+    )
+    st.session_state.percentage_dynamical_sob = st.slider(
+        "Ingrese un porcentaje de aumento\disminución de la sob: ", -10, 10, 0
+    )

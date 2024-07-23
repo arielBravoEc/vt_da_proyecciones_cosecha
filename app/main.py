@@ -10,7 +10,7 @@ from constants.css_constants import (
     CONTAINER_CSS,
 )
 from utils.proyection_helpers import get_projections
-from components.linechart_component import plot_line_chart
+from components.linechart_component import plot_line_chart,plot_line_chart_with_two_axis
 from components.side_bar_component import sidebar
 from catalog.projections_catalog import get_excel_data
 from components.modal_component import show_modal
@@ -48,6 +48,11 @@ if "use_personalize_config_prices" not in st.session_state:
     st.session_state.use_personalize_config_prices = None
 if "variable_selection" not in st.session_state:
     st.session_state.variable_selection = None
+    # para el seungo grafico de lineas
+if "variable_selection_plot_1" not in st.session_state:
+    st.session_state.variable_selection_plot_1 = None
+if "variable_selection_plot_2" not in st.session_state:
+    st.session_state.variable_selection_plot_2 = None
 # Ensure selected_rows key exists in session state
 if "selected_rows" not in st.session_state:
     st.session_state.selected_rows = []
@@ -66,6 +71,13 @@ if "checkbox_dinamycal_feed" not in st.session_state:
     st.session_state.checkbox_dinamycal_feed = False
 if "percentage_dynamical_feed" not in st.session_state:
     st.session_state.percentage_dynamical_feed = None
+# SOBREVIVENCIA
+if "checkbox_sob_campo" not in st.session_state:
+    st.session_state.checkbox_sob_campo = True
+if "checkbox_sob_consumo" not in st.session_state:
+    st.session_state.checkbox_sob_consumo = False
+if "percentage_dynamical_sob" not in st.session_state:
+    st.session_state.percentage_dynamical_sob = None
 
 # PARA PODER USAR ICONOS DE FONT AWESOME
 st.markdown(
@@ -231,6 +243,8 @@ with col_button_proy:
                         load_capacity=st.session_state.load_capacity,
                         is_using_lineal_feed=st.session_state.checkbox_lineal_feed,
                         percentage_dynamical_feed=st.session_state.percentage_dynamical_feed,
+                        is_using_sob_campo = st.session_state.checkbox_sob_campo,
+                        percentage_sob =st.session_state.percentage_dynamical_sob,
                     )
 
 
@@ -400,6 +414,50 @@ if st.session_state.data is not None:
                     ),
                 )
             plot_line_chart(data_proyecciones, st.session_state.variable_selection)
+        with stylable_container(
+            key="container_with_borderv2",
+            css_styles="""
+                {
+                    background-color: white;
+                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                    transition: transform 0.2s;
+                    border: 1px solid rgba(49, 51, 63, 0.2);
+                    border-radius: 10px;
+                    padding: calc(1em - 1px);
+                    max-width: 100%; /* Ajustar el ancho máximo al 100% del contenedor padre */
+                    max-height: 600px; /* Ajustar la altura máxima según sea necesario */
+                    overflow: hidden; /* Ocultar cualquier desbordamiento inicial */
+                    overflow-y: auto; /* Permitir desplazamiento vertical */
+                    display: flex; /* Usar flexbox para manejar mejor el contenido */
+                    flex-direction: column; /* Alinear elementos en columna */
+                }
+                """,
+        ):
+            cols_plot = st.columns(3)
+            pools = tuple(data_proyecciones["Piscina"].unique())
+            with cols_plot[0]:
+                st.session_state.pool_selection = st.selectbox("Piscina:", pools)
+            with cols_plot[1]:
+                st.session_state.variable_selection_plot_1 = st.selectbox(
+                    "Variable #1 a analizar",
+                    (
+                        "Costo lb/camaron",
+                        "UP($/ha/dia)",
+                        "ROI(%)",
+                        "Precio venta pesca final ($/Kg)",
+                    ),
+                )
+            with cols_plot[2]:
+                st.session_state.variable_selection_plot_2 = st.selectbox(
+                    "Variable #2 a analizar",
+                    (
+                        "UP($/ha/dia)",
+                        "Costo lb/camaron",
+                        "ROI(%)",
+                        "Precio venta pesca final ($/Kg)",
+                    ),
+                )
+            plot_line_chart_with_two_axis(data_proyecciones, st.session_state.variable_selection_plot_1, st.session_state.variable_selection_plot_2)
     else:
         #no hay datos
         st.warning('Para este campo no existen datos de piscinas actualizadas en los últimos 30 días.', icon="⚠️")
