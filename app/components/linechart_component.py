@@ -80,7 +80,7 @@ def plot_line_chart_with_two_axis(data_df, variable_axis_1, variable_axis2):
         chart1, chart2
     ).resolve_scale(
         y='independent'
-    ).interactive()
+    ).interactive(bind_y=False)
     
     cols_plot = st.columns([1])
     with cols_plot[0]:

@@ -265,7 +265,7 @@ def plot_table_groupped(data_df):
     ### calculamos los invididuos actuales de campo y consumo
     data_df['ind_campo'] = data_df['porcentaje_sob_campo']* data_df['densidad_siembra']
     data_df['ind_consumo'] = data_df['sobrevivencia_consumo']* data_df['densidad_siembra']
-    data_df['porcentaje_sob_campo'] = data_df['porcentaje_sob_campo']*100
+    data_df['porcentaje_sob_campo'] = round(data_df['porcentaje_sob_campo']*100,1)
     data_df['sobrevivencia_consumo'] = data_df['sobrevivencia_consumo']*100
     data_df['sobrevivencia_consumo'] = round(data_df['sobrevivencia_consumo'],1)
     data_df['porcentaje_sob_campo'] = np.vectorize(create_sob_and_ind_in_column)(data_df['porcentaje_sob_campo'],data_df['ind_campo'])
