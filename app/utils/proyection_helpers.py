@@ -1,4 +1,4 @@
-from catalog.projections_catalog import get_evat_data, get_excel_data
+from catalog.projections_catalog import get_evat_data, get_excel_data,get_evat_data_test
 from utils.data_generation_helper import get_id, get_id_ps, generate_proyection
 from utils.data_integration_helper import group_and_get_last_week_by_pool
 from utils.cleaning_helpers import (
@@ -31,11 +31,19 @@ def get_projections(
     percentage_dynamical_feed=None,
     is_using_sob_campo=False,
     percentage_sob=0,
+    test=False, # para el testeo especificamente
+    fecha_ultimo_dato = FECHA_MINIMA_ULTIMO_DATO, # para el testeo especificamente
+    minimo_dias_proyecto = MINIMO_DIAS_PROYECTO, # para el testeo especificamente
+    fecha_maxima_muestreo = None # opcional para el testeo especificamente
 ):
-    print(is_using_sob_campo)
-    print(percentage_sob)
+    #print(is_using_sob_campo)
+    #print(percentage_sob)
     # importamos los datos de la base de datos del evat
-    data_df = get_evat_data(farm_name)
+    if test:
+        data_df = get_evat_data_test(farm_name,fecha_maxima_muestreo)
+    else:
+        #si no es test
+        data_df = get_evat_data(farm_name)
     # importamos datos de precios
     precios_df = get_excel_data(sheet_name="precios")
     # importamos datos de distribucion por tallas
@@ -52,7 +60,7 @@ def get_projections(
     # configuramos los nuevos precios en caso de ser personalizado
     if is_using_personalized_price:
         precios_df = prices_table
-
+    #print(prices_table)
     # llenamos los nulos de raleos y vairables economicas y comprobamos nulos
     evat_consolidado = clean_nulls_and_fill_nan(data_df)
     # analizamos las variables para encontrar errores
@@ -71,7 +79,7 @@ def get_projections(
     evat_ultima_semana_df = group_and_get_last_week_by_pool(evat_consolidado)
     # filtramos solo piscinas actualizadas
     evat_ultima_semana_df = evat_ultima_semana_df[
-        evat_ultima_semana_df["fecha_muestreo"] >= FECHA_MINIMA_ULTIMO_DATO
+        evat_ultima_semana_df["fecha_muestreo"] >= fecha_ultimo_dato
     ]
     # reseteamos el index
     evat_ultima_semana_df = evat_ultima_semana_df.reset_index(drop=True)
@@ -80,7 +88,7 @@ def get_projections(
     evat_ultima_semana_df["sobrevivencia_proyecto"] = project_survival
     # filtramos piscinas cerca a cosecha y que sus dias de cultivo sean mayores al del proyecto
     evat_ultima_semana_df = filter_cycles_close_to_hasrvest(
-        evat_ultima_semana_df, MINIMO_DIAS_PROYECTO
+        evat_ultima_semana_df, minimo_dias_proyecto
     )
     # creamos una copa para comenzar la proyeccion
     evat_df = evat_ultima_semana_df.copy()

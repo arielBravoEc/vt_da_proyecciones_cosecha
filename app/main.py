@@ -21,6 +21,11 @@ from components.table_component import (
 from streamlit_extras.stylable_container import stylable_container
 from streamlit_modal import Modal
 
+import warnings
+
+# Suprimir FutureWarnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
 st.set_page_config(
     layout="wide",
     initial_sidebar_state=st.session_state.setdefault("sidebar_state", "collapsed"),
