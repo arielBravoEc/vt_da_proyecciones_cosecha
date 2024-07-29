@@ -106,10 +106,10 @@ def get_bench_data_for_test(farm_name, min_sowing_date):
     bench_df = pd.read_sql(query,mydb)
     bench_df['BiomasaPescaLbHa'] = bench_df['BiomasaPesca'] / bench_df['Ha']
     bench_df['BiomasaTotalKg'] = (bench_df['lbs_ha'] * bench_df['Ha'])/2.2
-    bench_df['AlimnetoAcumuladoKg'] = (bench_df['BiomasaTotalKg'] * bench_df['FCA'])
+    bench_df['AlimentoAcumuladoKg'] = (bench_df['BiomasaTotalKg'] * bench_df['FCA'])
     return bench_df
     
-def get_evat_data_test(client_name, fecha_maxima_muestreo):
+def get_evat_data_test(client_name, fecha_maxima_muestreo, pool_proy_test):
     # CREDENCIALES
     print("Intentando conectarse a la base de datos")
     string_conection = (
@@ -154,8 +154,9 @@ def get_evat_data_test(client_name, fecha_maxima_muestreo):
                 on evat.codigo_cliente = cl.codigo
             where UPPER(cl.razon_social) = '{client_name}'
                 and evat.fecha_siembra >= '2024-01-01'
-                and and evat.fecha_muestreo <= '{fecha_maxima_muestreo}'
+                and evat.fecha_muestreo <= '{fecha_maxima_muestreo}'
                 and evat.piscina not like '%PRE%'
+                and evat.piscina = '{pool_proy_test}'
                         """
     print("Conexión exitosa")
     data_df = pd.read_sql_query(query, engine)
