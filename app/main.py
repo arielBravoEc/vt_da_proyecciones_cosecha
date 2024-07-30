@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as  pd
 from constants.general import (
     DIAS_PROYECTO_DEFECTO,
     SOB_PROYECTO_DEFECTO,
@@ -9,8 +10,15 @@ from constants.css_constants import (
     BACKGROUND_COLOR,
     CONTAINER_CSS,
 )
+
+from constants.general import (
+    COSTO_MIX_DEFECTO,
+    COSTO_MILLAR_DEFECTO,
+    COSTO_FIJO_DEFECTO
+)
 from utils.proyection_helpers import get_projections
-from components.linechart_component import plot_line_chart,plot_line_chart_with_two_axis
+from utils.data_generation_helper import create_sob_and_ind_in_column
+from components.linechart_component import plot_line_chart,plot_line_chart_with_two_axis,plot_line_chart_with_two_axis_v2
 from components.side_bar_component import sidebar
 from catalog.projections_catalog import get_excel_data
 from components.modal_component import show_modal
@@ -22,6 +30,50 @@ from streamlit_extras.stylable_container import stylable_container
 from streamlit_modal import Modal
 
 import warnings
+import numpy as np
+## local storage
+from streamlit_local_storage import LocalStorage
+# inicializamos el almacenamiento local
+storage = LocalStorage(key="config_storage_proyecciones")
+
+# configuraciones por defecto
+default_config = {
+    "prices": get_excel_data(sheet_name="precios"),
+    "DIAS_PROYECTO_DEFECTO": DIAS_PROYECTO_DEFECTO,
+    "SOB_PROYECTO_DEFECTO": SOB_PROYECTO_DEFECTO,
+    "PESO_PROYECTO_DEFECTO": PESO_PROYECTO_DEFECTO,
+    "COSTO_MILLAR_DEFECTO": COSTO_MILLAR_DEFECTO,
+    "COSTO_MIX_DEFECTO": COSTO_MIX_DEFECTO,
+    "COSTO_FIJO_DEFECTO": COSTO_FIJO_DEFECTO,
+    "load_capacity": 0.0,
+    "is_using_lineal_feed": True,
+    "percentage_dynamical_feed": 5,
+    "is_using_sob_campo": True,
+    "percentage_dynamical_sob": 0,
+    "use_personalize_config_costos": False,
+    "use_personalize_config_prices": False
+}
+
+
+# Cargar las configuraciones guardadas o usarlas por defecto
+# Función para cargar las configuraciones guardadas o usar por defecto
+def load_config():
+    stored_config = storage.getItem('config')
+    if not stored_config:
+        return default_config
+    else:
+        stored_config['prices'] = pd.DataFrame.from_dict(stored_config['prices'])
+        stored_config['SOB_PROYECTO_DEFECTO'] = float(stored_config['SOB_PROYECTO_DEFECTO'])
+        stored_config['PESO_PROYECTO_DEFECTO'] = float(stored_config['PESO_PROYECTO_DEFECTO'])
+        stored_config['COSTO_MILLAR_DEFECTO'] = float(stored_config['COSTO_MILLAR_DEFECTO'])
+        stored_config['COSTO_MIX_DEFECTO'] = float(stored_config['COSTO_MIX_DEFECTO'])
+        stored_config['COSTO_FIJO_DEFECTO'] = float(stored_config['COSTO_FIJO_DEFECTO'])
+        stored_config['load_capacity'] = float(stored_config['load_capacity'])
+        #print(stored_config['SOB_PROYECTO_DEFECTO'])
+        return stored_config
+
+# Cargar configuraciones guardadas o usar por defecto
+config = load_config()
 
 # Suprimir FutureWarnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
@@ -33,6 +85,9 @@ st.set_page_config(
 # Usamos st.markdown para inyectar el CSS
 st.markdown(BACKGROUND_COLOR, unsafe_allow_html=True)
 
+# cargamos los precios por defecto
+if "prices_selected_rows" not in st.session_state:
+    st.session_state.prices_selected_rows = config['prices']
 
 # Inicializar estado de la aplicación
 if "data" not in st.session_state:
@@ -48,9 +103,9 @@ if "costo_mix" not in st.session_state:
 if "costo_fijo" not in st.session_state:
     st.session_state.costo_fijo = None
 if "use_personalize_config_costos" not in st.session_state:
-    st.session_state.use_personalize_config_costos = None
+    st.session_state.use_personalize_config_costos = config['use_personalize_config_costos']
 if "use_personalize_config_prices" not in st.session_state:
-    st.session_state.use_personalize_config_prices = None
+    st.session_state.use_personalize_config_prices = config['use_personalize_config_prices']
 if "variable_selection" not in st.session_state:
     st.session_state.variable_selection = None
     # para el seungo grafico de lineas
@@ -61,8 +116,7 @@ if "variable_selection_plot_2" not in st.session_state:
 # Ensure selected_rows key exists in session state
 if "selected_rows" not in st.session_state:
     st.session_state.selected_rows = []
-if "prices_selected_rows" not in st.session_state:
-    st.session_state.prices_selected_rows = get_excel_data(sheet_name="precios")
+
 # Inicializar la variable de estado para controlar la visibilidad del panel lateral
 if "show_sidebar" not in st.session_state:
     st.session_state.show_sidebar = False
@@ -71,18 +125,27 @@ if "use_personalize_load_capacity" not in st.session_state:
 if "load_capacity" not in st.session_state:
     st.session_state.load_capacity = None
 if "checkbox_lineal_feed" not in st.session_state:
-    st.session_state.checkbox_lineal_feed = True
+    st.session_state.checkbox_lineal_feed = config['is_using_lineal_feed']
 if "checkbox_dinamycal_feed" not in st.session_state:
-    st.session_state.checkbox_dinamycal_feed = False
+    st.session_state.checkbox_dinamycal_feed = not config['is_using_lineal_feed'] 
 if "percentage_dynamical_feed" not in st.session_state:
-    st.session_state.percentage_dynamical_feed = None
+    st.session_state.percentage_dynamical_feed = config['percentage_dynamical_feed']
 # SOBREVIVENCIA
 if "checkbox_sob_campo" not in st.session_state:
-    st.session_state.checkbox_sob_campo = True
+    st.session_state.checkbox_sob_campo = config['is_using_sob_campo']  
 if "checkbox_sob_consumo" not in st.session_state:
-    st.session_state.checkbox_sob_consumo = False
+    st.session_state.checkbox_sob_consumo = not config['is_using_sob_campo']
 if "percentage_dynamical_sob" not in st.session_state:
-    st.session_state.percentage_dynamical_sob = None
+    st.session_state.percentage_dynamical_sob = config['percentage_dynamical_sob']
+#variables de conf de pesos, sob
+if "peso_proyecto" not in st.session_state:
+    st.session_state.peso_proyecto = None
+if "sob_proyecto" not in st.session_state:
+    st.session_state.sob_proyecto = None
+if "dias_proyecto" not in st.session_state:
+    st.session_state.dias_proyecto = None
+
+
 
 # PARA PODER USAR ICONOS DE FONT AWESOME
 st.markdown(
@@ -105,7 +168,14 @@ def set_sidebar_state(value):
 # creamos la funcionalidad del sidebar de configuraciones
 @st.experimental_fragment
 def get_sidebar():
-    sidebar()
+    sidebar(config['COSTO_MIX_DEFECTO'], 
+            config['COSTO_FIJO_DEFECTO'], 
+            config['COSTO_MILLAR_DEFECTO'], 
+            config['load_capacity'],
+            config['percentage_dynamical_feed'],
+            config['percentage_dynamical_sob'],
+            storage
+            )
 
 
 with st.sidebar:
@@ -149,19 +219,19 @@ with stylable_container(
     col1, col2, col3 = st.columns(3)
     with col1:
         farm_selection = st.selectbox("Seleccione el campo", FARMS)
-        project_weight_selection = st.number_input(
+        st.session_state.peso_proyecto = st.number_input(
             "Seleccione Peso Proyecto",
             min_value=0.0,
             max_value=60.0,
-            value=PESO_PROYECTO_DEFECTO,
+            value=config['PESO_PROYECTO_DEFECTO'],
             step=1.0,
         )
     with col2:
-        sob = st.number_input(
+        st.session_state.sob_proyecto = st.number_input(
             "Seleccione Sobrevivencia Proyecto",
             min_value=0.0,
             max_value=1.0,
-            value=SOB_PROYECTO_DEFECTO,
+            value=config['SOB_PROYECTO_DEFECTO'],
             step=0.05,
         )
         # Botón para controlar la apertura/cierre del panel
@@ -170,11 +240,11 @@ with stylable_container(
         )
 
     with col3:
-        duration = st.number_input(
+        st.session_state.dias_proyecto = st.number_input(
             "Seleccione Días Proyecto",
             min_value=0,
             max_value=100,
-            value=DIAS_PROYECTO_DEFECTO,
+            value=config['DIAS_PROYECTO_DEFECTO'],
             step=1,
         )
 
@@ -233,8 +303,8 @@ with col_button_proy:
 
                     st.session_state.data = get_projections(
                         farm_name=farm_selection,
-                        project_duration=duration,
-                        project_survival=sob,
+                        project_duration=st.session_state.dias_proyecto,
+                        project_survival=st.session_state.sob_proyecto,
                         project_range=range_days,
                         is_using_personalized_cost=flag_use_cost,
                         is_using_personalized_price=flag_use_prices,
@@ -321,6 +391,8 @@ if st.session_state.data is not None:
                 },
                 inplace=True,
             )
+            data_proyecciones['densidad_actual'] = (data_proyecciones['Sobrevivencia final']/100)*data_proyecciones['densidad_siembra']
+            data_proyecciones['Sobrevivencia final'] = np.vectorize(create_sob_and_ind_in_column)(data_proyecciones['Sobrevivencia final'], data_proyecciones['densidad_actual'])
             data_v2 = data_proyecciones[
                 [
                     "Campo",
@@ -344,7 +416,7 @@ if st.session_state.data is not None:
             ].round(2)
 
             plot_table_with_filters_and_sort(
-                data_v2, "selected_rows", project_weight_selection
+                data_v2, "selected_rows", st.session_state.peso_proyecto
             )
 
         if st.session_state.data is not None:
@@ -412,9 +484,10 @@ if st.session_state.data is not None:
                 st.session_state.variable_selection = st.selectbox(
                     "Variable a analizar",
                     (
-                        "Costo lb/camaron",
                         "UP($/ha/dia)",
-                        "ROI(%)",
+                        "Peso (gr)",
+                        "Costo lb/camaron",
+                       
                         "Precio venta pesca final ($/Kg)",
                     ),
                 )
@@ -446,9 +519,9 @@ if st.session_state.data is not None:
                 st.session_state.variable_selection_plot_1 = st.selectbox(
                     "Variable #1 a analizar",
                     (
+                        "Peso (gr)",
                         "Costo lb/camaron",
                         "UP($/ha/dia)",
-                        "ROI(%)",
                         "Precio venta pesca final ($/Kg)",
                     ),
                 )
@@ -457,12 +530,12 @@ if st.session_state.data is not None:
                     "Variable #2 a analizar",
                     (
                         "UP($/ha/dia)",
+                        "Peso (gr)",
                         "Costo lb/camaron",
-                        "ROI(%)",
                         "Precio venta pesca final ($/Kg)",
                     ),
                 )
-            plot_line_chart_with_two_axis(data_proyecciones, st.session_state.variable_selection_plot_1, st.session_state.variable_selection_plot_2)
+            plot_line_chart_with_two_axis_v2(data_proyecciones, st.session_state.variable_selection_plot_1, st.session_state.variable_selection_plot_2)
     else:
         #no hay datos
         st.warning('Para este campo no existen datos de piscinas actualizadas en los últimos 30 días.', icon="⚠️")

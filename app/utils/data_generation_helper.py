@@ -9,7 +9,7 @@ import pytz
 
 
 def create_sob_and_ind_in_column(sob_column, ind_column):
-    return str(sob_column) + " % | " + str(round(ind_column,1)) + " ind/m2"
+    return str(round(sob_column,1)) + " % | " + str(round(ind_column,1)) + " ind/m2"
 
 
 # creamos id

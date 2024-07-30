@@ -45,6 +45,7 @@ def get_projections(
     else:
         #si no es test
         data_df = get_evat_data(farm_name)
+    ## eliminamos ps 132 de aglipesca debido a que es precria
     #print(data_df.shape)
     if len(data_df) > 0: 
         # importamos datos de precios

@@ -49,6 +49,8 @@ def clean_nulls_and_fill_nan(data_df):
 
 
 def clean_no_sense_values(data_df):
+    ## eliminamos ps 132 de aglipesca debido a que es precria
+    data_df = data_df.drop(data_df[(data_df['piscina'] == '132') & (data_df['campo'] == 'AGLIPESCA')].index)
     data_df = data_df[data_df["densidad_siembra_ind_m2"] > 2]
     data_df = data_df[data_df["densidad_siembra_ind_m2"] < 60]
     data_df = data_df[data_df["peso_siembra_gr"] > 0.1]

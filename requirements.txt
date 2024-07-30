@@ -67,6 +67,7 @@ moviepy==1.0.3
 msal==1.28.0
 msoffcrypto-tool==5.4.1
 mypy-extensions==1.0.0
+mysql-connector-python==9.0.0
 numpy==1.26.4
 O365==2.0.34
 oauthlib==3.2.2
@@ -136,6 +137,7 @@ streamlit-extras==0.4.3
 streamlit-faker==0.0.3
 streamlit-image-coordinates==0.1.9
 streamlit-keyup==0.2.4
+streamlit-local-storage==0.0.23
 streamlit-modal==0.1.2
 streamlit-toggle-switch==1.0.2
 streamlit-vertical-slider==2.5.5

@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from catalog.projections_catalog import get_excel_data
 import streamlit as st
 
 
@@ -87,3 +88,20 @@ elif farm_key == 'ACUARIOS':
 
 else:
     FARMS = ("CAMARONES NATURISA", "CAMINO REAL", "MARCHENA")
+
+DEFAULT_CONFIG = {
+    "prices": get_excel_data(sheet_name="precios"),
+    "DIAS_PROYECTO_DEFECTO": DIAS_PROYECTO_DEFECTO,
+    "SOB_PROYECTO_DEFECTO": SOB_PROYECTO_DEFECTO,
+    "PESO_PROYECTO_DEFECTO": PESO_PROYECTO_DEFECTO,
+    "COSTO_MILLAR_DEFECTO": COSTO_MILLAR_DEFECTO,
+    "COSTO_MIX_DEFECTO": COSTO_MIX_DEFECTO,
+    "COSTO_FIJO_DEFECTO": COSTO_FIJO_DEFECTO,
+    "load_capacity": 0.0,
+    "is_using_lineal_feed": True,
+    "percentage_dynamical_feed": 5,
+    "is_using_sob_campo": True,
+    "percentage_dynamical_sob": 0,
+    "use_personalize_config_costos": False,
+    "use_personalize_config_prices": False
+}

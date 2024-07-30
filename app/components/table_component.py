@@ -13,6 +13,7 @@ from utils.data_integration_helper import get_last
 from utils.data_generation_helper import create_sob_and_ind_in_column
 
 def plot_table_with_filters_and_sort(data_df, state_key, project_weight):
+    
 
     # Código JavaScript para aplicar estilos condicionales a toda la fila
     row_style_jscode = JsCode(
@@ -168,7 +169,7 @@ def plot_table_with_filters_and_sort(data_df, state_key, project_weight):
     gb.configure_column(
         "Sobrevivencia final",
         header_name="SOBRE. FINAL",
-        maxWidth=80,
+        maxWidth=145,
         wrapHeaderText=True,
         autoHeaderHeight=True,
     )
@@ -367,10 +368,10 @@ def plot_table_groupped(data_df):
         "ALIMENTO ACUMULADO KG", maxWidth=109, wrapHeaderText=True, autoHeaderHeight=True
     )
     gb.configure_column(
-        "ÚLTIMA SOB. CAMPO", maxWidth=140, wrapHeaderText=True, autoHeaderHeight=True
+        "ÚLTIMA SOB. CAMPO", maxWidth=145, wrapHeaderText=True, autoHeaderHeight=True
     )
     gb.configure_column(
-        "ÚLTIMA SOB. CONSUMO", maxWidth=140, wrapHeaderText=True, autoHeaderHeight=True
+        "ÚLTIMA SOB. CONSUMO", maxWidth=145, wrapHeaderText=True, autoHeaderHeight=True
     )
     gb.configure_pagination(
         paginationAutoPageSize=False, enabled=False
