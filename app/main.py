@@ -39,7 +39,7 @@ st.set_page_config(
     initial_sidebar_state=st.session_state.setdefault("sidebar_state", "collapsed"),
 )
 # inicializamos el almacenamiento local
-storage = LocalStorage(key="config_storage_proyecciones")
+storage = LocalStorage(key="config")
 
 # configuraciones por defecto
 default_config = {
@@ -66,6 +66,7 @@ def load_config():
     print(storage)
     stored_config = storage.getItem('config') or {}
     if not stored_config:
+        print("aaaaa")
         return default_config
     else:
         stored_config['prices'] = pd.DataFrame.from_dict(stored_config['prices'])
