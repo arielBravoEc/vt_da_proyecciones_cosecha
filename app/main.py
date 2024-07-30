@@ -39,7 +39,7 @@ st.set_page_config(
     initial_sidebar_state=st.session_state.setdefault("sidebar_state", "collapsed"),
 )
 # inicializamos el almacenamiento local
-storage = LocalStorage(key="config")
+storage = LocalStorage()
 
 # configuraciones por defecto
 default_config = {
