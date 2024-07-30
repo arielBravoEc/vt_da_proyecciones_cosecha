@@ -33,6 +33,11 @@ import warnings
 import numpy as np
 ## local storage
 from streamlit_local_storage import LocalStorage
+
+st.set_page_config(
+    layout="wide",
+    initial_sidebar_state=st.session_state.setdefault("sidebar_state", "collapsed"),
+)
 # inicializamos el almacenamiento local
 storage = LocalStorage(key="config_storage_proyecciones")
 
@@ -78,10 +83,7 @@ config = load_config()
 # Suprimir FutureWarnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
-st.set_page_config(
-    layout="wide",
-    initial_sidebar_state=st.session_state.setdefault("sidebar_state", "collapsed"),
-)
+
 # Usamos st.markdown para inyectar el CSS
 st.markdown(BACKGROUND_COLOR, unsafe_allow_html=True)
 
