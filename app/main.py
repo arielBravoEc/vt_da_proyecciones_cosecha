@@ -82,6 +82,7 @@ def load_config():
             return stored_config
     except TypeError as e:
         print(f"Error al obtener el ítem: {e}")
+        return default_config
 
 # Cargar configuraciones guardadas o usar por defecto
 config = load_config()
