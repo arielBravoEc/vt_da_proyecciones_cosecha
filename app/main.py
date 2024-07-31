@@ -63,22 +63,25 @@ default_config = {
 # Cargar las configuraciones guardadas o usarlas por defecto
 # Función para cargar las configuraciones guardadas o usar por defecto
 def load_config():
-    print(type(storage.getItem("config")))
-    #stored_config = storage.getItem("config") or {}
-    if type(storage.getItem("config")) is  type(None):
-        print("aaaaa")
-        return default_config
-    else:
-        stored_config = storage.getItem("config") or {}
-        stored_config['prices'] = pd.DataFrame.from_dict(stored_config['prices'])
-        stored_config['SOB_PROYECTO_DEFECTO'] = float(stored_config['SOB_PROYECTO_DEFECTO'])
-        stored_config['PESO_PROYECTO_DEFECTO'] = float(stored_config['PESO_PROYECTO_DEFECTO'])
-        stored_config['COSTO_MILLAR_DEFECTO'] = float(stored_config['COSTO_MILLAR_DEFECTO'])
-        stored_config['COSTO_MIX_DEFECTO'] = float(stored_config['COSTO_MIX_DEFECTO'])
-        stored_config['COSTO_FIJO_DEFECTO'] = float(stored_config['COSTO_FIJO_DEFECTO'])
-        stored_config['load_capacity'] = float(stored_config['load_capacity'])
-        #print(stored_config['SOB_PROYECTO_DEFECTO'])
-        return stored_config
+    try:
+        print(type(storage.getItem("config")))
+        #stored_config = storage.getItem("config") or {}
+        if type(storage.getItem("config")) is  type(None):
+            print("aaaaa")
+            return default_config
+        else:
+            stored_config = storage.getItem("config") or {}
+            stored_config['prices'] = pd.DataFrame.from_dict(stored_config['prices'])
+            stored_config['SOB_PROYECTO_DEFECTO'] = float(stored_config['SOB_PROYECTO_DEFECTO'])
+            stored_config['PESO_PROYECTO_DEFECTO'] = float(stored_config['PESO_PROYECTO_DEFECTO'])
+            stored_config['COSTO_MILLAR_DEFECTO'] = float(stored_config['COSTO_MILLAR_DEFECTO'])
+            stored_config['COSTO_MIX_DEFECTO'] = float(stored_config['COSTO_MIX_DEFECTO'])
+            stored_config['COSTO_FIJO_DEFECTO'] = float(stored_config['COSTO_FIJO_DEFECTO'])
+            stored_config['load_capacity'] = float(stored_config['load_capacity'])
+            #print(stored_config['SOB_PROYECTO_DEFECTO'])
+            return stored_config
+    except TypeError as e:
+        print(f"Error al obtener el ítem: {e}")
 
 # Cargar configuraciones guardadas o usar por defecto
 config = load_config()
