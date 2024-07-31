@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as  pd
+import json
 from constants.general import (
     DIAS_PROYECTO_DEFECTO,
     SOB_PROYECTO_DEFECTO,
@@ -40,10 +41,14 @@ st.set_page_config(
 )
 # inicializamos el almacenamiento local
 storage = LocalStorage()
-
+with st.spinner('Cargando datos precios...'):
+    precios_df = get_excel_data(sheet_name="precios")
 # configuraciones por defecto
 default_config = {
-    "prices": get_excel_data(sheet_name="precios"),
+    "prices":  {
+    'Precios': [3.60, 3.40, 3.25, 3.10,2.70,2.40,2.30,2.00,1.80],
+    'Tallas': ['20 - 30', '30 - 40', '40 - 50', '50 - 60', '60 - 70', '70 - 80', '80 - 100', '100-120', '120-140' ],
+},
     "DIAS_PROYECTO_DEFECTO": DIAS_PROYECTO_DEFECTO,
     "SOB_PROYECTO_DEFECTO": SOB_PROYECTO_DEFECTO,
     "PESO_PROYECTO_DEFECTO": PESO_PROYECTO_DEFECTO,
@@ -63,26 +68,20 @@ default_config = {
 # Cargar las configuraciones guardadas o usarlas por defecto
 # Función para cargar las configuraciones guardadas o usar por defecto
 def load_config():
-    try:
+    #try:
         print(type(storage.getItem("config")))
         #stored_config = storage.getItem("config") or {}
         if type(storage.getItem("config")) is  type(None):
             print("aaaaa")
+            print(default_config['prices'])
             return default_config
         else:
+            print("bbbb")
             stored_config = storage.getItem("config") or {}
-            stored_config['prices'] = pd.DataFrame.from_dict(stored_config['prices'])
-            stored_config['SOB_PROYECTO_DEFECTO'] = float(stored_config['SOB_PROYECTO_DEFECTO'])
-            stored_config['PESO_PROYECTO_DEFECTO'] = float(stored_config['PESO_PROYECTO_DEFECTO'])
-            stored_config['COSTO_MILLAR_DEFECTO'] = float(stored_config['COSTO_MILLAR_DEFECTO'])
-            stored_config['COSTO_MIX_DEFECTO'] = float(stored_config['COSTO_MIX_DEFECTO'])
-            stored_config['COSTO_FIJO_DEFECTO'] = float(stored_config['COSTO_FIJO_DEFECTO'])
-            stored_config['load_capacity'] = float(stored_config['load_capacity'])
-            #print(stored_config['SOB_PROYECTO_DEFECTO'])
             return stored_config
-    except TypeError as e:
-        print(f"Error al obtener el ítem: {e}")
-        return default_config
+    #except TypeError as e:
+    #    print(f"Error al obtener el ítem: {e}")
+    #    return default_config
 
 # Cargar configuraciones guardadas o usar por defecto
 config = load_config()
@@ -96,7 +95,7 @@ st.markdown(BACKGROUND_COLOR, unsafe_allow_html=True)
 
 # cargamos los precios por defecto
 if "prices_selected_rows" not in st.session_state:
-    st.session_state.prices_selected_rows = config['prices']
+    st.session_state.prices_selected_rows = pd.DataFrame.from_dict(config['prices'])
 
 # Inicializar estado de la aplicación
 if "data" not in st.session_state:
@@ -169,10 +168,10 @@ st.markdown(
 # creamos la funcionalidad del sidebar de configuraciones
 #@st.experimental_fragment
 def get_sidebar():
-    sidebar(config['COSTO_MIX_DEFECTO'], 
-            config['COSTO_FIJO_DEFECTO'], 
-            config['COSTO_MILLAR_DEFECTO'], 
-            config['load_capacity'],
+    sidebar(float(config['COSTO_MIX_DEFECTO']), 
+            float(config['COSTO_FIJO_DEFECTO']), 
+            float(config['COSTO_MILLAR_DEFECTO']), 
+            float(config['load_capacity']),
             config['percentage_dynamical_feed'],
             config['percentage_dynamical_sob'],
             storage
@@ -224,7 +223,7 @@ with stylable_container(
             "Seleccione Peso Proyecto",
             min_value=0.0,
             max_value=60.0,
-            value=config['PESO_PROYECTO_DEFECTO'],
+            value=float(config['PESO_PROYECTO_DEFECTO']),
             step=1.0,
         )
     with col2:
@@ -232,7 +231,7 @@ with stylable_container(
             "Seleccione Sobrevivencia Proyecto",
             min_value=0.0,
             max_value=1.0,
-            value=config['SOB_PROYECTO_DEFECTO'],
+            value=float(config['SOB_PROYECTO_DEFECTO']),
             step=0.05,
         )
         # Botón para controlar la apertura/cierre del panel

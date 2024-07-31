@@ -150,24 +150,26 @@ def sidebar(costo_mix_defecto, costo_fijo_defecto, costo_millar_defecto, load_ca
         ):
             save_button = st.button("Guardar esta configuración")
             if save_button:
-                 new_config = {
-                    "prices": st.session_state.prices_selected_rows.to_dict(orient='list'),
-                    "DIAS_PROYECTO_DEFECTO": st.session_state.dias_proyecto,
-                    "SOB_PROYECTO_DEFECTO": st.session_state.sob_proyecto,
-                    "PESO_PROYECTO_DEFECTO": st.session_state.peso_proyecto,
-                    "COSTO_MILLAR_DEFECTO": st.session_state.costo_larva,
-                    "COSTO_MIX_DEFECTO": st.session_state.costo_mix,
-                    "COSTO_FIJO_DEFECTO": st.session_state.costo_fijo,
-                    "load_capacity": st.session_state.load_capacity,
-                    "is_using_lineal_feed": st.session_state.checkbox_lineal_feed,
-                    "percentage_dynamical_feed": st.session_state.percentage_dynamical_feed,
-                    "is_using_sob_campo": st.session_state.checkbox_sob_campo,
-                    "percentage_dynamical_sob": st.session_state.percentage_dynamical_sob,
-                    "use_personalize_config_costos": st.session_state.use_personalize_config_costos,
-                    "use_personalize_config_prices": st.session_state.use_personalize_config_prices
-                }
-                 storage.setItem("config", new_config)
-                 st.success("¡Configuración guardada!")
+                print(st.session_state.prices_selected_rows.to_dict(orient='list'))
+                with st.spinner('Guardando...'):
+                    new_config = {
+                        "prices": st.session_state.prices_selected_rows.to_dict(orient='list'),
+                        "DIAS_PROYECTO_DEFECTO": st.session_state.dias_proyecto,
+                        "SOB_PROYECTO_DEFECTO": st.session_state.sob_proyecto,
+                        "PESO_PROYECTO_DEFECTO": st.session_state.peso_proyecto,
+                        "COSTO_MILLAR_DEFECTO": st.session_state.costo_larva,
+                        "COSTO_MIX_DEFECTO": st.session_state.costo_mix,
+                        "COSTO_FIJO_DEFECTO": st.session_state.costo_fijo,
+                        "load_capacity": st.session_state.load_capacity,
+                        "is_using_lineal_feed": st.session_state.checkbox_lineal_feed,
+                        "percentage_dynamical_feed": st.session_state.percentage_dynamical_feed,
+                        "is_using_sob_campo": st.session_state.checkbox_sob_campo,
+                        "percentage_dynamical_sob": st.session_state.percentage_dynamical_sob,
+                        "use_personalize_config_costos": st.session_state.use_personalize_config_costos,
+                        "use_personalize_config_prices": st.session_state.use_personalize_config_prices
+                    }
+                    storage.setItem("config", new_config)
+                st.success("¡Configuración guardada!")
     with stylable_container(
             key="container_with_border_button_delete_config",
             css_styles=r"""
