@@ -261,4 +261,5 @@ def get_projections(
     else:
         # si no hay datos retornamos vacio
         proyecciones_df = data_df
+    #print(proyecciones_df.columns)
     return proyecciones_df

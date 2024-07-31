@@ -60,7 +60,7 @@ for i in range(1,4):
                 row_proyection['FCA_Proyeccion'] = proy_data['fca'][0]
                 row_proyection['PesoPescaProyeccion'] = proy_data['peso'][0]
                 row_proyection['PrecioCamaronPesca_Proyeccion'] = proy_data['precio_venta_pesca'][0]
-                row_proyection['AlimentoAcumuladoKg_Proyeccion'] = proy_data['alimento_acumulado'][0]
+                row_proyection['AlimentoAcumuladoKg_Proyeccion'] = proy_data['Kilos AABB Totales para cumplir proyecto'][0]
                 row_proyection['SobPesca_Proyeccion'] = proy_data['sobrevivencia'][0]
                 row_proyection['PrecioMixAlimento_Proyeccion'] = proy_data['costo_mix_alimento_kg'][0]
                 row_proyection['PrecioLarva_Proyeccion'] = proy_data['costo_millar_larva'][0]
@@ -70,6 +70,7 @@ for i in range(1,4):
                 row_proyection['UltimaSobCampo'] = proy_data['porcentaje_sob_campo'][0]
                 row_proyection['UltimoPesoMuestreo'] = proy_data['peso_actual'][0]
                 row_proyection['UltimaSobConsumo'] = proy_data['sobrevivencia_consumo'][0]
+                row_proyection['UltimoAlimentoAcumuladoKg'] = proy_data['alimento_acumulado'][0]
                 proyecciones_lst.append(pd.DataFrame(row_proyection).transpose())
             #print(type(row_proyection))
             
