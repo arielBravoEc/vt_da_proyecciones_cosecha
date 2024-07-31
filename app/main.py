@@ -63,12 +63,13 @@ default_config = {
 # Cargar las configuraciones guardadas o usarlas por defecto
 # Función para cargar las configuraciones guardadas o usar por defecto
 def load_config():
-    print(storage)
-    stored_config = storage.getItem('config') or {}
-    if not stored_config:
+    print(type(storage.getItem("config")))
+    #stored_config = storage.getItem("config") or {}
+    if type(storage.getItem("config")) is  type(None):
         print("aaaaa")
         return default_config
     else:
+        stored_config = storage.getItem("config") or {}
         stored_config['prices'] = pd.DataFrame.from_dict(stored_config['prices'])
         stored_config['SOB_PROYECTO_DEFECTO'] = float(stored_config['SOB_PROYECTO_DEFECTO'])
         stored_config['PESO_PROYECTO_DEFECTO'] = float(stored_config['PESO_PROYECTO_DEFECTO'])
@@ -158,19 +159,11 @@ st.markdown(
 )
 
 
-def set_sidebar_state(value):
-    if st.session_state.sidebar_state == value:
-        st.session_state.flag = value
-        st.session_state.sidebar_state = (
-            "expanded" if value == "collapsed" else "collapsed"
-        )
-    else:
-        st.session_state.sidebar_state = value
-    st.rerun()
+
 
 
 # creamos la funcionalidad del sidebar de configuraciones
-@st.experimental_fragment
+#@st.experimental_fragment
 def get_sidebar():
     sidebar(config['COSTO_MIX_DEFECTO'], 
             config['COSTO_FIJO_DEFECTO'], 
@@ -214,9 +207,9 @@ with stylable_container(
             """,
 ):
     cols_button = st.columns(3)
-    with cols_button[2]:
-        if st.button("Personalizar proyección"):
-            set_sidebar_state("expanded")
+    #with cols_button[2]:
+    #    if st.button("Personalizar proyección"):
+    #        set_sidebar_state("expanded")
     with cols_button[0]:
         st.write("##### CONFIGURACION INICIAL")
         # st.text("Configuración Inicial" )
