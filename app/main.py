@@ -70,13 +70,13 @@ def load_config():
     #try:
         #print(type(storage.getItem("config")))
         #stored_config = storage.getItem("config") or {}
-        if storage.getItem("config") is None:
+        if all_config.get("config") is None:
             print("aaaaa")
-            print(default_config['prices'])
+            #print(default_config['prices'])
             return default_config
         else:
             print("bbbb")
-            stored_config = storage.getItem("config") or {}
+            stored_config = all_config.get("config") or {}
             return stored_config
     #except TypeError as e:
     #    print(f"Error al obtener el ítem: {e}")
