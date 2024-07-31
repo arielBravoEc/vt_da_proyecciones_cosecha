@@ -68,9 +68,9 @@ default_config = {
 # Función para cargar las configuraciones guardadas o usar por defecto
 def load_config():
     #try:
-        print(type(storage.getItem("config")))
+        #print(type(storage.getItem("config")))
         #stored_config = storage.getItem("config") or {}
-        if type(storage.getItem("config")) is  type(None):
+        if storage.getItem("config") is None:
             print("aaaaa")
             print(default_config['prices'])
             return default_config
