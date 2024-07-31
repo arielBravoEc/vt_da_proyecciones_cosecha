@@ -42,7 +42,7 @@ st.set_page_config(
 # inicializamos el almacenamiento local
 storage = LocalStorage()
 all_config  = storage.getAll()
-print(all_config)
+print("All config: " , all_config)
 with st.spinner('Cargando datos precios...'):
     precios_df = get_excel_data(sheet_name="precios")
 # configuraciones por defecto
