@@ -76,8 +76,9 @@ def load_config():
             return default_config
         else:
             print("bbbb")
-            stored_config = all_config.get("config") or {}
-            return stored_config
+            #stored_config = all_config.get("config") or {}
+            print(all_config)
+            return default_config
     #except TypeError as e:
     #    print(f"Error al obtener el ítem: {e}")
     #    return default_config
