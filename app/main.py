@@ -70,7 +70,7 @@ def load_config():
     #try:
         #print(type(storage.getItem("config")))
         #stored_config = storage.getItem("config") or {}
-        if all_config.get("config") is None:
+        if all_config is None or all_config.get("config") is None:
             print("aaaaa")
             #print(default_config['prices'])
             return default_config
