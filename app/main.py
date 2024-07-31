@@ -33,16 +33,16 @@ from streamlit_modal import Modal
 import warnings
 import numpy as np
 ## local storage
-from streamlit_local_storage import LocalStorage
+#from streamlit_local_storage import LocalStorage
 
 st.set_page_config(
     layout="wide",
     initial_sidebar_state=st.session_state.setdefault("sidebar_state", "collapsed"),
 )
 # inicializamos el almacenamiento local
-storage = LocalStorage()
-all_config  = storage.getAll()
-print("All config: " , all_config)
+#storage = LocalStorage()
+#all_config  = storage.getAll()
+#print("All config: " , all_config)
 with st.spinner('Cargando datos precios...'):
     precios_df = get_excel_data(sheet_name="precios")
 # configuraciones por defecto
@@ -66,25 +66,25 @@ default_config = {
 
 # Cargar las configuraciones guardadas o usarlas por defecto
 # Función para cargar las configuraciones guardadas o usar por defecto
-def load_config():
+#def load_config():
     #try:
         #print(type(storage.getItem("config")))
         #stored_config = storage.getItem("config") or {}
-        if all_config is None or all_config.get("config") is None:
-            print("aaaaa")
+        #if all_config is None or all_config.get("config") is None:
+        #    print("aaaaa")
             #print(default_config['prices'])
-            return default_config
-        else:
-            print("bbbb")
+        #    return default_config
+        #else:
+        #    print("bbbb")
             #stored_config = all_config.get("config") or {}
-            print(all_config)
-            return default_config
+        #    print(all_config)
+        #    return default_config
     #except TypeError as e:
     #    print(f"Error al obtener el ítem: {e}")
     #    return default_config
 
 # Cargar configuraciones guardadas o usar por defecto
-config = load_config()
+config = default_config
 st.session_state.load_config =config 
 
 # Suprimir FutureWarnings
@@ -179,7 +179,7 @@ if st.session_state.load_config:
                 float(config['load_capacity']),
                 config['percentage_dynamical_feed'],
                 config['percentage_dynamical_sob'],
-                storage
+                None
                 )
 
 
