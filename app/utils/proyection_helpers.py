@@ -1,4 +1,8 @@
-from catalog.projections_catalog import get_evat_data, get_excel_data,get_evat_data_test
+from catalog.projections_catalog import (
+    get_evat_data,
+    get_excel_data,
+    get_evat_data_test,
+)
 from utils.data_generation_helper import get_id, get_id_ps, generate_proyection
 from utils.data_integration_helper import group_and_get_last_week_by_pool
 from utils.cleaning_helpers import (
@@ -17,37 +21,75 @@ import pandas as pd
 
 
 def get_projections(
-    farm_name,
-    project_duration=90,
-    project_survival=0.75,
-    project_range=21,
-    is_using_personalized_cost=False,
-    is_using_personalized_price=False,
-    prices_table=None,
-    cost_info=False,
-    is_using_personalized_load_capacity=False,
-    load_capacity=None,
-    is_using_lineal_feed=False,
-    percentage_dynamical_feed=None,
-    is_using_sob_campo=False,
-    percentage_sob=0,
-    test=False, # para el testeo especificamente
-    fecha_ultimo_dato = FECHA_MINIMA_ULTIMO_DATO, # para el testeo especificamente
-    minimo_dias_proyecto = MINIMO_DIAS_PROYECTO, # para el testeo especificamente
-    fecha_maxima_muestreo = None, # opcional para el testeo especificamente
-    pool_proy_test = None # opcional para el testeo especificamente
+    farm_name: str,
+    project_duration: int = 90,
+    project_survival: float = 0.75,
+    project_range: int = 21,
+    is_using_personalized_cost: bool = False,
+    is_using_personalized_price: bool = False,
+    prices_table: pd.DataFrame = None,
+    cost_info: dict = {},
+    is_using_personalized_load_capacity: bool = False,
+    load_capacity: float = None,
+    is_using_lineal_feed: bool = False,
+    percentage_dynamical_feed: int = None,
+    is_using_sob_campo: bool = False,
+    percentage_sob: int = 0,
+    test: bool = False,  # para el testeo especificamente
+    fecha_ultimo_dato: str = FECHA_MINIMA_ULTIMO_DATO,  # para el testeo especificamente
+    minimo_dias_proyecto: int = MINIMO_DIAS_PROYECTO,  # para el testeo especificamente
+    fecha_maxima_muestreo=None,  # opcional para el testeo especificamente
+    pool_proy_test: str = None,  # opcional para el testeo especificamente
 ):
-    #print(is_using_sob_campo)
-    #print(percentage_sob)
+    """
+    Esta ``función`` procesa el evat y retorna todas las proyecciones.
+    Args:
+        farm_name (str): Nombre del campo.
+        project_survival (float): sobrevivencia del proyecto
+        project_duration (int): duracion del proyecto
+        project_range (int): rango de días para hacer la proyección antes y después
+        is_using_personalized_cost (bool): booleano que indica si se está
+        usando costos personalizados o por defecto
+        is_using_personalized_price (bool): booleano que indica si se está
+        usando precios personalizados o por defecto
+        prices_table (pd.DataFrame): variable que guarda los precios personalizados
+        cost_info (dict): diccionario con los valores de los costos personalizados
+        is_using_personalized_load_capacity (bool): variable que nos dice si está
+        usando capac de carga personalizada o el dato del evat.
+        load_capacity (float): variable con la capacidad de carga personalizada
+        is_using_lineal_feed (bool): booleano que indica si se está usando
+        alimentación de manera lineal para la proyección.
+        percentage_dynamical_feed (int): porcentaje de aumento de alimento en la proyeccion
+        (sirve cuando se selecciona proyectar el alimento de manera dinamica)
+        is_using_sob_campo (bool): booleano que indica si se está usando son de campo o
+        por consumo para hacer la proyeccion
+        percentage_sob  (int): porcentaje de aumento o dismunución
+        de sobrevivencia en la proyeccion
+        test (bool): variable que nos indica cuando se está haciendo un test
+        de acertividad.
+        fecha_ultimo_dato (str): Fecha con el ultimo dato a considerar en los muestreos
+        (debe ser 30 dias menor a la ultima cosecha analizada)
+        minimo_dias_proyecto (int): mínimo de  días para considerar si un ciclo
+        está cerca de cosecha y puede ser analizado.
+        fecha_maxima_muestreo: para el test de acertividad
+        variable que nos ayuda a determinar el dato maximo a
+        obtener de la base para simular n semanas anteriores.
+
+        pool_proy_test (str): para el test de acertividad: indica de
+        que piscina se va a realizar la proyeccion.
+    Returns:
+        Retorna el dataframe con las proyecciones
+    """
+
     # importamos los datos de la base de datos del evat
     if test:
         data_df = get_evat_data_test(farm_name, fecha_maxima_muestreo, pool_proy_test)
     else:
-        #si no es test
+        # si no es test
         data_df = get_evat_data(farm_name)
-    ## eliminamos ps 132 de aglipesca debido a que es precria
-    #print(data_df.shape)
-    if len(data_df) > 0: 
+    # eliminamos ps 132 de aglipesca debido a que es precria
+
+    if len(data_df) > 0:
         # importamos datos de precios
         precios_df = get_excel_data(sheet_name="precios")
         # importamos datos de distribucion por tallas
@@ -64,12 +106,15 @@ def get_projections(
         # configuramos los nuevos precios en caso de ser personalizado
         if is_using_personalized_price:
             precios_df = prices_table
-        #print(prices_table)
+        # print(prices_table)
         # llenamos los nulos de raleos y vairables economicas y comprobamos nulos
+
         evat_consolidado = clean_nulls_and_fill_nan(data_df)
+
         # analizamos las variables para encontrar errores
+        # print(data_df[data_df['piscina']== '19'])
         evat_consolidado = clean_no_sense_values(evat_consolidado)
-        
+
         # creamos id
         evat_consolidado["id"] = np.vectorize(get_id)(
             evat_consolidado["campo"],
@@ -82,11 +127,14 @@ def get_projections(
         # agrupamos para obtener el ultimo dato de cada piscina
         evat_ultima_semana_df = group_and_get_last_week_by_pool(evat_consolidado)
         # filtramos solo piscinas actualizadas
+        # print("AA", evat_ultima_semana_df.shape)
+        # print(evat_ultima_semana_df)
         if not test:
             evat_ultima_semana_df = evat_ultima_semana_df[
                 evat_ultima_semana_df["fecha_muestreo"] >= fecha_ultimo_dato
             ]
-        
+        # print("fecha: ", fecha_ultimo_dato)
+        # print("BBB ", evat_ultima_semana_df.shape)
         # reseteamos el index
         evat_ultima_semana_df = evat_ultima_semana_df.reset_index(drop=True)
         # creamos dos columnas en base a la duracion y sobrevivencia del proyecto
@@ -96,7 +144,7 @@ def get_projections(
         evat_ultima_semana_df = filter_cycles_close_to_hasrvest(
             evat_ultima_semana_df, minimo_dias_proyecto
         )
-        #print(evat_ultima_semana_df.shape)
+        # print(evat_ultima_semana_df.shape)
         # creamos una copa para comenzar la proyeccion
         evat_df = evat_ultima_semana_df.copy()
         # partimos por el dia de proyecto
@@ -119,7 +167,7 @@ def get_projections(
             is_using_sob_campo=is_using_sob_campo,
             percentage_sob=percentage_sob,
         )
-        #print(evat_df.columns)
+        # print(evat_df.columns)
         proyecciones_df = evat_df[VARIABLES_INTERES]
         evat__hacia_atras_df = evat_df.copy()
         progress_text = f"Generando {project_range} proyecciones hacia adelante"
@@ -218,14 +266,15 @@ def get_projections(
         ].round(2)
         proyecciones_df = proyecciones_df.rename(
             columns={
-                "Días de ciclo finales": "dias",
-                "Peso final proyectado (gr)": "peso",
-                "Biomasa proyecto (lb/ha)": "biomasa",
-                "Sobrevivencia final de ciclo proyecto (%)": "sobrevivencia",
+                "Días de ciclo finales": "dias_proyectados",
+                "Peso final proyectado (gr)": "peso_proyectado_gr",
+                "Biomasa proyecto (lb/ha)": "biomasa_proyectada_lb_ha",
+                "Biomas total proyecto (lb)": "biomasa_total_proyectada_lb",
+                "Sobrevivencia final de ciclo proyecto (%)": "sobrevivencia_pesca_proyectada",
                 "FCA Proyecto": "fca",
-                "Total Costo x Libra ($/lb) Proyecto": "costo",
-                "UP ($/Ha/Día) Proyecto": "up",
-                "ROI Proyecto": "roi",
+                "Total Costo x Libra ($/lb) Proyecto": "costo_lb_proyecto",
+                "UP ($/Ha/Día) Proyecto": "up_proyecto",
+                "ROI Proyecto": "roi_proyecto",
                 "Campo": "campo",
                 "piscina": "piscina",
                 "Fecha estimada de cosecha": "fecha_estimada_cosecha",
@@ -234,7 +283,7 @@ def get_projections(
                 "dias_cultivo": "dia_final",
                 "peso_actual_gr": "peso_actual",
                 "Precio venta pesca final ($/lb)": "precio_venta_lbs",
-                "Precio venta pesca final ($/kg)": "precio_venta_pesca",
+                "Precio venta pesca final ($/kg)": "precio_venta_pesca_kg",
             }
         )
         proyecciones_df = proyecciones_df.sort_values(
@@ -247,19 +296,22 @@ def get_projections(
             "fecha_estimada_cosecha"
         ].str.slice(0, 10)
         proyecciones_df["fecha_siembra"] = proyecciones_df["fecha_siembra"].astype(str)
-        proyecciones_df["fecha_siembra"] = proyecciones_df["fecha_siembra"].str.slice(0, 10)
-        proyecciones_df["fecha_muestreo"] = proyecciones_df["fecha_muestreo"].astype(str)
+        proyecciones_df["fecha_siembra"] = proyecciones_df["fecha_siembra"].str.slice(
+            0, 10
+        )
+        proyecciones_df["fecha_muestreo"] = proyecciones_df["fecha_muestreo"].astype(
+            str
+        )
         proyecciones_df["fecha_muestreo"] = proyecciones_df["fecha_muestreo"].str.slice(
             0, 10
         )
-        proyecciones_df["biomasa_total"] = (
-            proyecciones_df["biomasa"] * proyecciones_df["ha"]
+        # proyecciones_df["biomasa_total"] = (
+        #    proyecciones_df["biomasa"] * proyecciones_df["ha"]
+        # )
+        proyecciones_df["precio_venta_lbs_con_rendimiento"] = (
+            proyecciones_df["precio_venta_lbs"] * 0.95
         )
-        #print("-----------")
-        #print(proyecciones_df[(proyecciones_df['dias'] == 87) & (proyecciones_df['piscina'] == '23')][['alimento_acumulado']])
-        #print(proyecciones_df[(proyecciones_df['dias'] == 86) & (proyecciones_df['piscina'] == '17')][['alimento_acumulado']])
     else:
         # si no hay datos retornamos vacio
         proyecciones_df = data_df
-    #print(proyecciones_df.columns)
     return proyecciones_df

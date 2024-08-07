@@ -4,7 +4,7 @@ import streamlit as st
 
 
 # FECHA ACTUAL
-#FECHA_ACTUAL = datetime.now() - timedelta(days=70)
+# FECHA_ACTUAL = datetime.now() - timedelta(days=70)
 FECHA_ACTUAL = datetime.now()
 # FECHA MINIMA DEL ULTIMO DATO: ES DECIR SI UNA PISCINA ESTá CON SU ULTIMO DATO
 # MAS DE N DIAS DESACTUALIZADO, NO SE LO TOMA EN CUENTA A ESA PISCINA PARA LA PROY
@@ -45,7 +45,7 @@ VARIABLES_INTERES = [
     "alimento_acumulado",
     "capacidad_de_carga_lbs_ha",
     "sobrevivencia_consumo",
-    "Kilos AABB Totales para cumplir proyecto"
+    "Kilos AABB Totales para cumplir proyecto",
 ]
 
 
@@ -56,7 +56,7 @@ PESO_PROYECTO_DEFECTO = 30.0
 COSTO_MILLAR_DEFECTO = 5.0
 COSTO_MIX_DEFECTO = 1.12
 COSTO_FIJO_DEFECTO = 30.0
-
+DIAS_SECADO = 10
 FARMS = None
 if farm_key == "NATURISA":
     FARMS = ("CAMARONES NATURISA", "CAMINO REAL", "MARCHENA")
@@ -81,7 +81,7 @@ elif farm_key == "SIXTO EGUIGUREN":
     COSTO_MILLAR_DEFECTO = 3.50
     COSTO_MIX_DEFECTO = 1.29
     COSTO_FIJO_DEFECTO = 30.0
-elif farm_key == 'ACUARIOS':
+elif farm_key == "ACUARIOS":
     FARMS = ("SATUKIN", "TECNOTEMPE")
     DIAS_PROYECTO_DEFECTO = 70
     SOB_PROYECTO_DEFECTO = 0.61
@@ -104,5 +104,6 @@ DEFAULT_CONFIG = {
     "is_using_sob_campo": True,
     "percentage_dynamical_sob": 0,
     "use_personalize_config_costos": False,
-    "use_personalize_config_prices": False
+    "use_personalize_config_prices": False,
+    "DIAS_SECADO": 10,
 }

@@ -5,7 +5,15 @@ import streamlit as st
 from sqlalchemy import create_engine
 import mysql.connector as connection
 
-def get_evat_data(farm_name):
+
+def get_evat_data(farm_name: str) -> pd.Dataframe:
+    """
+    Esta ``función`` obtiene datos del evat de la base de datos de genIA
+    Args:
+        farm_name (str): Nombre del campo.
+    Returns:
+        Retorna el dataframe con los datos del evat
+    """
     # CREDENCIALES
     print("Intentando conectarse a la base de datos")
     string_conection = (
@@ -55,11 +63,23 @@ def get_evat_data(farm_name):
                         """
     print("Conexión exitosa")
     data_df = pd.read_sql_query(query, engine)
-    
+
     return data_df
 
 
-def get_excel_data(sheet_name=None, skiprows=None, usecols=None):
+def get_excel_data(
+    sheet_name: str = None, skiprows: int = None, usecols: str = None
+) -> pd.DataFrame:
+    """
+    Esta ``función`` obtiene datos del archivo plano con informacion de
+    precios y distribuciones de tallas
+    Args:
+        sheet_name (str): Nombre de la pestaña.
+        skiprows (int): numero de filas a saltarse para obtener la informacion.
+        usecols (str): rango de columnas para extraer la informacion.
+    Returns:
+        Retorna el dataframe con los datos del excel
+    """
     dir_actual = os.getcwd()
     # print("Ruta del directorio actual:", dir_actual)
     ruta_excel = os.path.join(dir_actual, "app", "static", "data", "datos_evatv2.xlsm")
@@ -69,47 +89,76 @@ def get_excel_data(sheet_name=None, skiprows=None, usecols=None):
     return data_df
 
 
-def get_bench_data_for_test(farm_name, min_sowing_date):
-    mydb = connection.connect(host="benchsrv.mysql.database.azure.com", database = 'importdb',user="vitapro_powerbi@benchsrv", passwd="UYBN4JNUtBRZVDh")
-    query = f"""select NombreCampo, 
+def get_bench_data_for_test(farm_name: str, min_harvest_date: str) -> pd.DataFrame:
+    """
+    Esta ``función`` obtiene datos del bench para hacer el test de acertividad.
+    Args:
+        farm_name (str): Nombre del campo.
+        min_harvest_date (str): fecha para filtrar y obtener solo ciclos mas recientes.
+    Returns:
+        Retorna el dataframe con los datos del bench
+    """
+    mydb = connection.connect(
+        host="benchsrv.mysql.database.azure.com",
+        database="importdb",
+        user="vitapro_powerbi@benchsrv",
+        passwd="UYBN4JNUtBRZVDh",
+    )
+    query = f"""select NombreCampo,
                     GrupoCliente,
-                    NombrePiscina,	
+                    NombrePiscina,
                     Ha,
-                    FechaSiembra,	
-                    FechaCosecha,	
-                    TipoSiembra,	
-                    DensidadSiembra_Im2,	
-                    PesoSiembra,	
-                    PesoPesca,	
-                    BiomasaPesca,	
+                    FechaSiembra,
+                    FechaCosecha,
+                    TipoSiembra,
+                    DensidadSiembra_Im2,
+                    PesoSiembra,
+                    PesoPesca,
+                    BiomasaPesca,
                     FCA,
-                    CostoFijo_HaDia,	
-                    PrecioLarva,	
-                    PrecioMixAlimento,	
-                    PrecioCamaronPesca,	
+                    CostoFijo_HaDia,
+                    PrecioLarva,
+                    PrecioMixAlimento,
+                    PrecioCamaronPesca,
                     MarcaAABBEngorde,
-                    RendimientoPlanta,	
-                    DiasCiclo,	
-                    DensidadSiembra_Iha,	
-                    CrecimientoSemanal,	
-                    CosechaTotal,	
-                    SobPesca,	
-                    lbs_ha,	
-                    DensidadFinal_Im2,	
-                    CostoLbCamaron,	
-                    UP_HaDia,	
+                    RendimientoPlanta,
+                    DiasCiclo,
+                    DensidadSiembra_Iha,
+                    CrecimientoSemanal,
+                    CosechaTotal,
+                    SobPesca,
+                    lbs_ha,
+                    DensidadFinal_Im2,
+                    CostoLbCamaron,
+                    UP_HaDia,
                     ROI,
                     CrecimientoDiario,
                     Estatus_Raleos
-                from importdb.bdciclos where GrupoCliente in ('{farm_name}') and FechaCosecha > '{min_sowing_date}' 
+                from importdb.bdciclos
+                where  GrupoCliente in ('{farm_name}')
+                and FechaCosecha > '{min_harvest_date}'
                 order by FechaCosecha desc"""
-    bench_df = pd.read_sql(query,mydb)
-    bench_df['BiomasaPescaLbHa'] = bench_df['BiomasaPesca'] / bench_df['Ha']
-    bench_df['BiomasaTotalKg'] = (bench_df['lbs_ha'] * bench_df['Ha'])/2.2
-    bench_df['AlimentoAcumuladoKg'] = (bench_df['BiomasaTotalKg'] * bench_df['FCA'])
+    bench_df = pd.read_sql(query, mydb)
+    bench_df["BiomasaPescaLbHa"] = bench_df["BiomasaPesca"] / bench_df["Ha"]
+    bench_df["BiomasaTotalKg"] = (bench_df["lbs_ha"] * bench_df["Ha"]) / 2.2
+    bench_df["AlimentoAcumuladoKg"] = bench_df["BiomasaTotalKg"] * bench_df["FCA"]
     return bench_df
-    
-def get_evat_data_test(client_name, fecha_maxima_muestreo, pool_proy_test):
+
+
+def get_evat_data_test(
+    client_name: str, fecha_maxima_muestreo: str, pool_proy_test: str
+) -> pd.DataFrame:
+    """
+    Esta ``función`` obtiene datos del evat de la base de datos de genIA para
+    test de acertividad
+    Args:
+        client_name (str): Nombre del cliente.
+        fecha_maxima_muestreo (str): fecha para filtrar y obtener solo
+        muestreos mas antiguos.
+        pool_proy_test (str): piscina de la cual se van a obtener los datos.
+    Returns:
+        Retorna el dataframe con los datos del evat
+    """
     # CREDENCIALES
     print("Intentando conectarse a la base de datos")
     string_conection = (
@@ -160,5 +209,5 @@ def get_evat_data_test(client_name, fecha_maxima_muestreo, pool_proy_test):
                         """
     print("Conexión exitosa")
     data_df = pd.read_sql_query(query, engine)
-    
+
     return data_df

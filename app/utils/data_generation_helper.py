@@ -7,17 +7,25 @@ import datetime
 import pytz
 
 
+def create_sob_and_ind_in_column(sob_column: float, ind_column: float) -> str:
+    """
+    Esta ``función`` crea un string combiando la sob y los individuos
 
-def create_sob_and_ind_in_column(sob_column, ind_column):
-    return str(round(sob_column,1)) + " % | " + str(round(ind_column,1)) + " ind/m2"
+    Args:
+        sob_column (float): Sobrevivencia.
+        ind_column (float): individuos.
+    Returns:
+        Retorna str
+    """
+    return str(round(sob_column, 1)) + " % | " + str(round(ind_column, 1)) + " ind/m2"
 
 
-# creamos id
-def get_id(Campo, Ps, FechaSiembra):
+# creamos id de ciclo
+def get_id(Campo: str, Ps: str, FechaSiembra) -> str:
     return Campo + "-" + str(Ps) + "-" + str(FechaSiembra)[0:10]
 
 
-def get_id_ps(Campo, Ps):
+def get_id_ps(Campo: str, Ps: str) -> str:
     return Campo + "-" + str(Ps)
 
 
@@ -139,18 +147,41 @@ def generate_distribution_price_by_weight(
 
 
 def generate_proyection(
-    data_df,
-    project_survival,
-    project_duration,
+    data_df: pd.DataFrame,
+    project_survival: float,
+    project_duration: int,
     price_df: pd.DataFrame,
     distribution_df: pd.DataFrame,
-    dias_ciclo_finales=None,
-    is_using_lineal_feed=True,
-    percentage_dynamical_feed=None,
-    is_using_sob_campo=True,
-    percentage_sob=0
-):
+    dias_ciclo_finales: int = None,
+    is_using_lineal_feed: bool = True,
+    percentage_dynamical_feed: int = None,
+    is_using_sob_campo: bool = True,
+    percentage_sob: int = 0,
+) -> pd.DataFrame:
+    """
+    Esta ``función`` retorna la proyeccion de un día en el futuro
+    Args:
+        data_df (Pandas dataframe): Datos del evat.
+        project_survival (float): sobrevivencia del proyecto
+        project_duration (int): duracion del proyecto
+        price_df (Pandas dataframe): Datos con el precio en kg por talla
+        distribution_df (Pandas dataframe): Datos con información de
+        cada peso, que porcentaje de talla le pertenece
+        para calcular su precio ponderado
+        dias_ciclo_finales (int): valor que aumenta o disminuye el día de proyeccion.
+        is_using_lineal_feed (bool): booleano que indica si se está usando
+        alimentación de manera lineal para la proyección.
+        percentage_dynamical_feed (int): porcentaje de aumento de alimento en la proyeccion
+        (sirve cuando se selecciona proyectar el alimento de manera dinamica)
+        is_using_sob_campo (bool): booleano que indica si se está usando son de campo o
+        por consumo para hacer la proyeccion
+        percentage_sob (int): porcentaje de aumento o dismunución
+        de sobrevivencia en la proyeccion
+    Returns:
+        Retorna el dataframe con el nuevo dato de proyección
+    """
     if not dias_ciclo_finales:
+        # es la proyeccion a dia de proyecto
         data_df["Días restantes para cumplir proyecto"] = data_df[
             "Días faltantes para lograr el peso del proyecto"
         ]
@@ -159,10 +190,12 @@ def generate_proyection(
         * data_df["crecimiento_ultimas_4_semanas"]
     ) + data_df["peso_actual_gr"]
     if is_using_lineal_feed:
+        # si us alimento lineal
         data_df["Kilos AABB Totales para cumplir proyecto"] = (
             data_df["Días restantes para cumplir proyecto"] * data_df["kgab_dia"]
         ) + data_df["alimento_acumulado"]
     else:
+        # usa alimento dinamico + porcentaje
         data_df["Kilos AABB Totales para cumplir proyecto"] = (
             data_df["Días restantes para cumplir proyecto"]
             * (data_df["kgab_dia"] * (1.0 + (percentage_dynamical_feed / 100)))
@@ -173,12 +206,13 @@ def generate_proyection(
     if not is_using_sob_campo:
         # si usa la sob de consumo
         data_df["Sobrevivencia final de ciclo proyecto (%)"] = (
-        (data_df["sobrevivencia_consumo"]  * 100) + percentage_sob
-    ) - (
-        (data_df["Días restantes para cumplir proyecto"] / 7)
-        * data_df["Mortalidad semanal"]
-    )
+            (data_df["sobrevivencia_consumo"] * 100) + percentage_sob
+        ) - (
+            (data_df["Días restantes para cumplir proyecto"] / 7)
+            * data_df["Mortalidad semanal"]
+        )
     else:
+        # usa sob de campo
         data_df["Sobrevivencia final de ciclo proyecto (%)"] = (
             (data_df["porcentaje_sob_campo"] * 100) + percentage_sob
         ) - (
@@ -313,25 +347,52 @@ class PDF(FPDF):
 
 
 # Función para exportar el DataFrame a PDF
-def export_df_to_pdf(df):
+def export_df_to_pdf(df: pd.DataFrame) -> io.BytesIO:
+    """
+    Esta ``función`` crea un buffer para poder descargar pdf en streamlit
+
+    Args:
+        df (Pandas dataframe): Datos de las proyecciones seleccionados a exportar.
+    Raises:
+        ValueError: Si faltan columnas requeridas en el DataFrame.
+    Returns:
+        Retorna buffer
+    """
+    # Verificar la presencia de las columnas necesarias
+    required_columns = [
+        "Fecha Estimada Cosecha",
+        "Sobrevivencia final",
+        "Precio venta pesca final ($/Lb)",
+        "Piscina",
+        "Campo",
+        "ha",
+        "Días",
+        "Peso (gr)",
+        "Biomasa (lb/ha)",
+        "Biomasa Total (LB)",
+        "FCA",
+        "Costo lb/camaron",
+        "UP($/ha/dia)",
+    ]
+    missing_columns = [col for col in required_columns if col not in df.columns]
+    if missing_columns:
+        raise ValueError(
+            f"Faltan las siguientes columnas requeridas: "
+            f"{', '.join(missing_columns)}"
+        )
     df_print = df.drop(
         columns=[
-            "IsMax",
-            "IsMax_Up",
-            "aguaje",
             "tipo_proyeccion",
-            "IsProjectWeight",
-            "ROI(%)",
-            "Precio venta pesca final ($/Kg)",
-            "capacidad_de_carga_lbs_ha",
-            "IsLoadCapacity",
+            "Precio venta pesca final ($/Lb)",
         ]
     )
+    # eliminamos columnas no necesarias para el pdf
+    # y lo guardamos en un nuevo dataframe
     df_print.rename(
         columns={
             "Fecha Estimada Cosecha": "Fecha Cosecha",
             "Sobrevivencia final": "Sob. Final",
-            "Precio venta pesca final ($/Kg)": "Precio venta",
+            "Precio venta pesca final ($/Lb)": "Precio venta",
             "Piscina": "PS.",
         },
         inplace=True,
@@ -375,13 +436,25 @@ def export_df_to_pdf(df):
     return buffer
 
 
-def export_to_csv(datos_df):
+def export_to_csv(datos_df: pd.DataFrame):
+    """
+    Esta ``función`` crea un buffer para poder descargar csv en streamlit
+
+    Args:
+        df (Pandas dataframe): Datos de las proyecciones seleccionados a exportar.
+    """
     # Convertir el DataFrame a CSV
     csv = datos_df.to_csv(index=False).encode("latin1")
     return csv
 
 
-def to_excel(df):
+def to_excel(df: pd.DataFrame):
+    """
+    Esta ``función`` crea un buffer para poder descargar excel en streamlit
+
+    Args:
+        df (Pandas dataframe): Datos de las proyecciones seleccionados a exportar.
+    """
     output = io.BytesIO()
     writer = pd.ExcelWriter(output, engine="xlsxwriter")
     df.to_excel(writer, index=False, sheet_name="proyecciones")
@@ -394,9 +467,12 @@ def to_excel(df):
     return processed_data
 
 
-def export_to_xlsx(datos_df):
-    # Convertir el DataFrame a CSV
+def export_to_xlsx(datos_df: pd.DataFrame):
+    """
+    Esta ``función`` crea un buffer para poder descargar escel en streamlit
+
+     Args:
+         df (Pandas dataframe): Datos de las proyecciones seleccionados a exportar.
+    """
     excel = to_excel(datos_df)
     return excel
-
-

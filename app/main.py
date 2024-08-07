@@ -1,6 +1,6 @@
 import streamlit as st
-import pandas as  pd
-import json
+import pandas as pd
+
 from constants.general import (
     DIAS_PROYECTO_DEFECTO,
     SOB_PROYECTO_DEFECTO,
@@ -15,11 +15,12 @@ from constants.css_constants import (
 from constants.general import (
     COSTO_MIX_DEFECTO,
     COSTO_MILLAR_DEFECTO,
-    COSTO_FIJO_DEFECTO
+    COSTO_FIJO_DEFECTO,
+    DIAS_SECADO,
 )
 from utils.proyection_helpers import get_projections
 from utils.data_generation_helper import create_sob_and_ind_in_column
-from components.linechart_component import plot_line_chart,plot_line_chart_with_two_axis,plot_line_chart_with_two_axis_v2
+from components.linechart_component import plot_line_chart, plot_rentability_graph
 from components.side_bar_component import sidebar
 from catalog.projections_catalog import get_excel_data
 from components.modal_component import show_modal
@@ -32,22 +33,23 @@ from streamlit_modal import Modal
 
 import warnings
 import numpy as np
-## local storage
-#from streamlit_local_storage import LocalStorage
+
+# local storage
+# from streamlit_local_storage import LocalStorage
 
 st.set_page_config(
     layout="wide",
     initial_sidebar_state=st.session_state.setdefault("sidebar_state", "collapsed"),
 )
 # inicializamos el almacenamiento local
-#storage = LocalStorage()
-#all_config  = storage.getAll()
-#print("All config: " , all_config)
-with st.spinner('Cargando datos precios...'):
+# storage = LocalStorage()
+# all_config  = storage.getAll()
+# print("All config: " , all_config)
+with st.spinner("Cargando datos precios..."):
     precios_df = get_excel_data(sheet_name="precios")
 # configuraciones por defecto
 default_config = {
-    "prices": precios_df.to_dict(orient='list'),
+    "prices": precios_df.to_dict(orient="list"),
     "DIAS_PROYECTO_DEFECTO": DIAS_PROYECTO_DEFECTO,
     "SOB_PROYECTO_DEFECTO": SOB_PROYECTO_DEFECTO,
     "PESO_PROYECTO_DEFECTO": PESO_PROYECTO_DEFECTO,
@@ -60,35 +62,35 @@ default_config = {
     "is_using_sob_campo": True,
     "percentage_dynamical_sob": 0,
     "use_personalize_config_costos": False,
-    "use_personalize_config_prices": False
+    "use_personalize_config_prices": False,
 }
 
 
 # Cargar las configuraciones guardadas o usarlas por defecto
 # Función para cargar las configuraciones guardadas o usar por defecto
-#def load_config():
-    #try:
-        #print(type(storage.getItem("config")))
-        #stored_config = storage.getItem("config") or {}
-        #if all_config is None or all_config.get("config") is None:
-        #    print("aaaaa")
-            #print(default_config['prices'])
-        #    return default_config
-        #else:
-        #    print("bbbb")
-            #stored_config = all_config.get("config") or {}
-        #    print(all_config)
-        #    return default_config
-    #except TypeError as e:
-    #    print(f"Error al obtener el ítem: {e}")
-    #    return default_config
+# def load_config():
+# try:
+# print(type(storage.getItem("config")))
+# stored_config = storage.getItem("config") or {}
+# if all_config is None or all_config.get("config") is None:
+#    print("aaaaa")
+# print(default_config['prices'])
+#    return default_config
+# else:
+#    print("bbbb")
+# stored_config = all_config.get("config") or {}
+#    print(all_config)
+#    return default_config
+# except TypeError as e:
+#    print(f"Error al obtener el ítem: {e}")
+#    return default_config
 
 # Cargar configuraciones guardadas o usar por defecto
 config = default_config
-st.session_state.load_config =config 
+st.session_state.load_config = config
 
 # Suprimir FutureWarnings
-warnings.simplefilter(action='ignore', category=FutureWarning)
+warnings.simplefilter(action="ignore", category=FutureWarning)
 
 
 # Usamos st.markdown para inyectar el CSS
@@ -98,9 +100,9 @@ if st.session_state.load_config:
 
     # cargamos los precios por defecto
     if "prices_selected_rows" not in st.session_state:
-        st.session_state.prices_selected_rows = pd.DataFrame.from_dict(config['prices'])
+        st.session_state.prices_selected_rows = pd.DataFrame.from_dict(config["prices"])
 
-    if 'load_config' not in st.session_state:
+    if "load_config" not in st.session_state:
         st.session_state.load_config = None
     # Inicializar estado de la aplicación
     if "data" not in st.session_state:
@@ -116,9 +118,13 @@ if st.session_state.load_config:
     if "costo_fijo" not in st.session_state:
         st.session_state.costo_fijo = None
     if "use_personalize_config_costos" not in st.session_state:
-        st.session_state.use_personalize_config_costos = config['use_personalize_config_costos']
+        st.session_state.use_personalize_config_costos = config[
+            "use_personalize_config_costos"
+        ]
     if "use_personalize_config_prices" not in st.session_state:
-        st.session_state.use_personalize_config_prices = config['use_personalize_config_prices']
+        st.session_state.use_personalize_config_prices = config[
+            "use_personalize_config_prices"
+        ]
     if "variable_selection" not in st.session_state:
         st.session_state.variable_selection = None
         # para el seungo grafico de lineas
@@ -128,7 +134,7 @@ if st.session_state.load_config:
         st.session_state.variable_selection_plot_2 = None
     # Ensure selected_rows key exists in session state
     if "selected_rows" not in st.session_state:
-        st.session_state.selected_rows = []
+        st.session_state.selected_rows = pd.DataFrame()
 
     # Inicializar la variable de estado para controlar la visibilidad del panel lateral
     if "show_sidebar" not in st.session_state:
@@ -138,19 +144,19 @@ if st.session_state.load_config:
     if "load_capacity" not in st.session_state:
         st.session_state.load_capacity = None
     if "checkbox_lineal_feed" not in st.session_state:
-        st.session_state.checkbox_lineal_feed = config['is_using_lineal_feed']
+        st.session_state.checkbox_lineal_feed = config["is_using_lineal_feed"]
     if "checkbox_dinamycal_feed" not in st.session_state:
-        st.session_state.checkbox_dinamycal_feed = not config['is_using_lineal_feed'] 
+        st.session_state.checkbox_dinamycal_feed = not config["is_using_lineal_feed"]
     if "percentage_dynamical_feed" not in st.session_state:
-        st.session_state.percentage_dynamical_feed = config['percentage_dynamical_feed']
+        st.session_state.percentage_dynamical_feed = config["percentage_dynamical_feed"]
     # SOBREVIVENCIA
     if "checkbox_sob_campo" not in st.session_state:
-        st.session_state.checkbox_sob_campo = config['is_using_sob_campo']  
+        st.session_state.checkbox_sob_campo = config["is_using_sob_campo"]
     if "checkbox_sob_consumo" not in st.session_state:
-        st.session_state.checkbox_sob_consumo = not config['is_using_sob_campo']
+        st.session_state.checkbox_sob_consumo = not config["is_using_sob_campo"]
     if "percentage_dynamical_sob" not in st.session_state:
-        st.session_state.percentage_dynamical_sob = config['percentage_dynamical_sob']
-    #variables de conf de pesos, sob
+        st.session_state.percentage_dynamical_sob = config["percentage_dynamical_sob"]
+    # variables de conf de pesos, sob
     if "peso_proyecto" not in st.session_state:
         st.session_state.peso_proyecto = None
     if "sob_proyecto" not in st.session_state:
@@ -158,7 +164,9 @@ if st.session_state.load_config:
     if "dias_proyecto" not in st.session_state:
         st.session_state.dias_proyecto = None
 
-
+    # para la seleccion de varias pisicnas
+    if "selected_pools" not in st.session_state:
+        st.session_state.selected_pools = None
 
     # PARA PODER USAR ICONOS DE FONT AWESOME
     st.markdown(
@@ -166,30 +174,25 @@ if st.session_state.load_config:
         unsafe_allow_html=True,
     )
 
-
-
-
-
     # creamos la funcionalidad del sidebar de configuraciones
-    #@st.experimental_fragment
+    # @st.experimental_fragment
     def get_sidebar():
-        sidebar(float(config['COSTO_MIX_DEFECTO']), 
-                float(config['COSTO_FIJO_DEFECTO']), 
-                float(config['COSTO_MILLAR_DEFECTO']), 
-                float(config['load_capacity']),
-                config['percentage_dynamical_feed'],
-                config['percentage_dynamical_sob'],
-                None
-                )
-
+        sidebar(
+            float(config["COSTO_MIX_DEFECTO"]),
+            float(config["COSTO_FIJO_DEFECTO"]),
+            float(config["COSTO_MILLAR_DEFECTO"]),
+            float(config["load_capacity"]),
+            config["percentage_dynamical_feed"],
+            config["percentage_dynamical_sob"],
+            None,
+            DIAS_SECADO,
+        )
 
     with st.sidebar:
         get_sidebar()
 
-
     # Iniciamos el modal
     modal = Modal(key="example_modal", title="Cosechas Seleccionadas", max_width=1200)
-
 
     st.title("Proyecciones de cosechas")
     st.write(
@@ -197,9 +200,7 @@ if st.session_state.load_config:
         + " considerarla como una recomendación, ya que hay factores externos que pueden influir en los resultados."
     )
 
-
     st.markdown(CONTAINER_CSS, unsafe_allow_html=True)
-
 
     with stylable_container(
         key="container_with_borderv0",
@@ -215,7 +216,7 @@ if st.session_state.load_config:
                 """,
     ):
         cols_button = st.columns(3)
-        #with cols_button[2]:
+        # with cols_button[2]:
         #    if st.button("Personalizar proyección"):
         #        set_sidebar_state("expanded")
         with cols_button[0]:
@@ -228,7 +229,7 @@ if st.session_state.load_config:
                 "Seleccione Peso Proyecto",
                 min_value=0.0,
                 max_value=60.0,
-                value=float(config['PESO_PROYECTO_DEFECTO']),
+                value=float(config["PESO_PROYECTO_DEFECTO"]),
                 step=1.0,
             )
         with col2:
@@ -236,7 +237,7 @@ if st.session_state.load_config:
                 "Seleccione Sobrevivencia Proyecto",
                 min_value=0.0,
                 max_value=1.0,
-                value=float(config['SOB_PROYECTO_DEFECTO']),
+                value=float(config["SOB_PROYECTO_DEFECTO"]),
                 step=0.05,
             )
             # Botón para controlar la apertura/cierre del panel
@@ -248,18 +249,16 @@ if st.session_state.load_config:
             st.session_state.dias_proyecto = st.number_input(
                 "Seleccione Días Proyecto",
                 min_value=0,
-                max_value=100,
-                value=config['DIAS_PROYECTO_DEFECTO'],
+                max_value=120,
+                value=config["DIAS_PROYECTO_DEFECTO"],
                 step=1,
             )
 
         # a = st.line_chart({'data': [1, 2, 3, 4, 5]},  use_container_width=True)
         # st.button('Procesar y Mostrar Datos')
 
-
     col_button_proy, col_button_selection = st.columns([0.5, 0.5])
     # Verificar si los datos están en session_state
-
 
     with col_button_proy:
         with stylable_container(
@@ -323,10 +322,9 @@ if st.session_state.load_config:
                             load_capacity=st.session_state.load_capacity,
                             is_using_lineal_feed=st.session_state.checkbox_lineal_feed,
                             percentage_dynamical_feed=st.session_state.percentage_dynamical_feed,
-                            is_using_sob_campo = st.session_state.checkbox_sob_campo,
-                            percentage_sob =st.session_state.percentage_dynamical_sob,
+                            is_using_sob_campo=st.session_state.checkbox_sob_campo,
+                            percentage_sob=st.session_state.percentage_dynamical_sob,
                         )
-
 
     # Verificar si los datos están en session_state
     if st.session_state.data is not None:
@@ -378,42 +376,31 @@ if st.session_state.load_config:
             ):
                 st.write("##### PROYECCIONES")
 
-                data_proyecciones.rename(
-                    columns={
-                        "campo": "Campo",
-                        "piscina": "Piscina",
-                        "fecha_estimada_cosecha": "Fecha Estimada Cosecha",
-                        "dias": "Días",
-                        "peso": "Peso (gr)",
-                        "biomasa": "Biomasa (lb/ha)",
-                        "sobrevivencia": "Sobrevivencia final",
-                        "fca": "FCA",
-                        "costo": "Costo lb/camaron",
-                        "up": "UP($/ha/dia)",
-                        "roi": "ROI(%)",
-                        "precio_venta_pesca": "Precio venta pesca final ($/Kg)",
-                        "biomasa_total": "Biomasa Total (LB)",
-                    },
-                    inplace=True,
+                data_proyecciones["densidad_actual"] = (
+                    data_proyecciones["sobrevivencia_pesca_proyectada"] / 100
+                ) * data_proyecciones["densidad_siembra"]
+                data_proyecciones["sobrevivencia_pesca_proyectada"] = np.vectorize(
+                    create_sob_and_ind_in_column
+                )(
+                    data_proyecciones["sobrevivencia_pesca_proyectada"],
+                    data_proyecciones["densidad_actual"],
                 )
-                data_proyecciones['densidad_actual'] = (data_proyecciones['Sobrevivencia final']/100)*data_proyecciones['densidad_siembra']
-                data_proyecciones['Sobrevivencia final'] = np.vectorize(create_sob_and_ind_in_column)(data_proyecciones['Sobrevivencia final'], data_proyecciones['densidad_actual'])
                 data_v2 = data_proyecciones[
                     [
-                        "Campo",
-                        "Piscina",
+                        "campo",
+                        "piscina",
                         "ha",
-                        "Fecha Estimada Cosecha",
-                        "Días",
-                        "Peso (gr)",
-                        "Biomasa (lb/ha)",
-                        "Biomasa Total (LB)",
-                        "Sobrevivencia final",
-                        "FCA",
-                        "Costo lb/camaron",
-                        "UP($/ha/dia)",
-                        "ROI(%)",
-                        "Precio venta pesca final ($/Kg)",
+                        "fecha_estimada_cosecha",
+                        "dias_proyectados",
+                        "peso_proyectado_gr",
+                        "biomasa_proyectada_lb_ha",
+                        "biomasa_total_proyectada_lb",
+                        "sobrevivencia_pesca_proyectada",
+                        "fca",
+                        "costo_lb_proyecto",
+                        "up_proyecto",
+                        "roi_proyecto",
+                        "precio_venta_lbs_con_rendimiento",
                         "tipo_proyeccion",
                         "aguaje",
                         "capacidad_de_carga_lbs_ha",
@@ -421,7 +408,7 @@ if st.session_state.load_config:
                 ].round(2)
 
                 plot_table_with_filters_and_sort(
-                    data_v2, "selected_rows", st.session_state.peso_proyecto
+                    data_v2, st.session_state.peso_proyecto
                 )
 
             if st.session_state.data is not None:
@@ -441,7 +428,22 @@ if st.session_state.load_config:
                 ):
                     if st.button("Abrir Selección"):
                         modal.open()
-
+                # with stylable_container(
+                #     key="container_with_border_button_seleccion",
+                #     css_styles=r"""
+                #             button p:before {
+                #                 font-family: 'Font Awesome 5 Free';
+                #                 content: '\f07c';
+                #                 display: inline-block;
+                #                 padding-right: 3px;
+                #                 padding-left: 3px;
+                #                 vertical-align: middle;
+                #                 font-weight: 900;
+                #             }
+                #             """,
+                # ):
+                #     if st.button("Limpiar selección"):
+                #         st.session_state.selected_rows = pd.DataFrame()
                 # mostramos el modal en caso de que se haga click en abrir
                 if modal.is_open():
                     with modal.container():
@@ -482,7 +484,7 @@ if st.session_state.load_config:
                     """,
             ):
                 col1, col2 = st.columns(2)
-                pools = tuple(data_proyecciones["Piscina"].unique())
+                pools = tuple(data_proyecciones["piscina"].unique())
                 with col1:
                     st.session_state.pool_selection = st.selectbox("Piscina", pools)
                 with col2:
@@ -492,11 +494,14 @@ if st.session_state.load_config:
                             "UP($/ha/dia)",
                             "Peso (gr)",
                             "Costo lb/camaron",
-                        
                             "Precio venta pesca final ($/Kg)",
                         ),
                     )
-                plot_line_chart(data_proyecciones, st.session_state.variable_selection)
+                plot_line_chart(
+                    data_proyecciones,
+                    st.session_state.pool_selection,
+                    st.session_state.variable_selection,
+                )
             with stylable_container(
                 key="container_with_borderv2",
                 css_styles="""
@@ -508,7 +513,7 @@ if st.session_state.load_config:
                         border-radius: 10px;
                         padding: calc(1em - 1px);
                         max-width: 100%; /* Ajustar el ancho máximo al 100% del contenedor padre */
-                        max-height: 600px; /* Ajustar la altura máxima según sea necesario */
+                        max-height: 700px; /* Ajustar la altura máxima según sea necesario */
                         overflow: hidden; /* Ocultar cualquier desbordamiento inicial */
                         overflow-y: auto; /* Permitir desplazamiento vertical */
                         display: flex; /* Usar flexbox para manejar mejor el contenido */
@@ -516,31 +521,15 @@ if st.session_state.load_config:
                     }
                     """,
             ):
-                cols_plot = st.columns(3)
-                pools = tuple(data_proyecciones["Piscina"].unique())
-                with cols_plot[0]:
-                    st.session_state.pool_selection = st.selectbox("Piscina:", pools)
-                with cols_plot[1]:
-                    st.session_state.variable_selection_plot_1 = st.selectbox(
-                        "Variable #1 a analizar",
-                        (
-                            "Peso (gr)",
-                            "Costo lb/camaron",
-                            "UP($/ha/dia)",
-                            "Precio venta pesca final ($/Kg)",
-                        ),
+                cols_plot_summary = st.columns(3)
+                with cols_plot_summary[0]:
+                    st.session_state.selected_pools = st.multiselect(
+                        "Seleccione una o varias piscinas:", options=pools
                     )
-                with cols_plot[2]:
-                    st.session_state.variable_selection_plot_2 = st.selectbox(
-                        "Variable #2 a analizar",
-                        (
-                            "UP($/ha/dia)",
-                            "Peso (gr)",
-                            "Costo lb/camaron",
-                            "Precio venta pesca final ($/Kg)",
-                        ),
-                    )
-                plot_line_chart_with_two_axis_v2(data_proyecciones, st.session_state.variable_selection_plot_1, st.session_state.variable_selection_plot_2)
+                plot_rentability_graph(data_proyecciones)
         else:
-            #no hay datos
-            st.warning('Para este campo no existen datos de piscinas actualizadas en los últimos 30 días.', icon="⚠️")
+            # no hay datos
+            st.warning(
+                "Para este campo no existen datos de piscinas actualizadas en los últimos 30 días.",
+                icon="⚠️",
+            )

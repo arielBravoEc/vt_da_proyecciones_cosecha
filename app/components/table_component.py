@@ -12,18 +12,30 @@ import numpy as np
 from utils.data_integration_helper import get_last
 from utils.data_generation_helper import create_sob_and_ind_in_column
 
-def plot_table_with_filters_and_sort(data_df, state_key, project_weight):
-    
 
+def plot_table_with_filters_and_sort(
+    data_df: pd.DataFrame, project_weight: float
+) -> None:
+    """
+    Esta ``función`` muestra la tabla de proyecciones
+
+    Args:
+        data_df (dataframe): pandas dataframe con los datos de las proyecciones
+       project_weight (float): valor del peso proyecto para marcarlo en la tabla
+    Raises:
+        ValueError: Si faltan columnas requeridas en el DataFrame.
+    Returns:
+        Retorna None
+    """
     # Código JavaScript para aplicar estilos condicionales a toda la fila
     row_style_jscode = JsCode(
         """
     function(params) {
-        if (params.data.tipo_proyeccion == 'fecha estimada de cosecha' && params.data.aguaje != 1) {
+        if (params.data.tipo_proyeccion == 'fecha_estimada_cosecha' && params.data.aguaje != 1) {
             return { 'color': '#884de3', 'fontWeight': 'bold' };
-        } else if (params.data.aguaje == 1 && params.data.tipo_proyeccion != 'fecha estimada de cosecha') {
+        } else if (params.data.aguaje == 1 && params.data.tipo_proyeccion != 'fecha_estimada_cosecha') {
             return { 'backgroundColor': '#d3d3d3' };
-        } else if (params.data.aguaje == 1 && params.data.tipo_proyeccion == 'fecha estimada de cosecha') {
+        } else if (params.data.aguaje == 1 && params.data.tipo_proyeccion == 'fecha_estimada_cosecha') {
             return { 'backgroundColor': '#d3d3d3', 'fontWeight': 'bold','color': '#884de3' };
         } else {
             return { 'color': 'black' };
@@ -31,21 +43,21 @@ def plot_table_with_filters_and_sort(data_df, state_key, project_weight):
     }
     """
     )
-    checkbox_event_jscode = JsCode(
-        """
-        function(params) {
-            var selectedRows = params.api.getSelectedRows();
-            if (selectedRows.length > 0) {
-                var selectedRowData = selectedRows.map(row => row.data);
-                Streamlit.setComponentValue(selectedRowData);
-            }
-    }
-    """
-    )
-    data_df["IsMax"] = data_df.groupby("Piscina")["ROI(%)"].transform(
+    # checkbox_event_jscode = JsCode(
+    #     """
+    #     function(params) {
+    #         var selectedRows = params.api.getSelectedRows();
+    #         if (selectedRows.length > 0) {
+    #             var selectedRowData = selectedRows.map(row => row.data);
+    #             Streamlit.setComponentValue(selectedRowData);
+    #         }
+    # }
+    # """
+    # )
+    data_df["IsMax"] = data_df.groupby("piscina")["roi_proyecto"].transform(
         lambda x: x == x.max()
     )
-    data_df["IsMax_Up"] = data_df.groupby("Piscina")["UP($/ha/dia)"].transform(
+    data_df["IsMax_Up"] = data_df.groupby("piscina")["up_proyecto"].transform(
         lambda x: x == x.max()
     )
 
@@ -67,13 +79,13 @@ def plot_table_with_filters_and_sort(data_df, state_key, project_weight):
             return pd.Series([False] * len(grupo), index=grupo.index)
 
     data_df["IsProjectWeight"] = (
-        data_df.groupby("Piscina")
-        .apply(lambda x: valor_mas_cercano(x, "Peso (gr)", project_weight))
+        data_df.groupby("piscina")
+        .apply(lambda x: valor_mas_cercano(x, "peso_proyectado_gr", project_weight))
         .reset_index(level=0, drop=True)
     )
     data_df["IsLoadCapacity"] = (
-        data_df.groupby("Piscina")
-        .apply(lambda x: valor_mas_cercano_capacidad(x, "Biomasa (lb/ha)"))
+        data_df.groupby("piscina")
+        .apply(lambda x: valor_mas_cercano_capacidad(x, "biomasa_proyectada_lb_ha"))
         .reset_index(level=0, drop=True)
     )
     # Definir la función de JavaScript para resaltar la celda con el valor máximo
@@ -125,25 +137,25 @@ def plot_table_with_filters_and_sort(data_df, state_key, project_weight):
     # Crea un GridOptionsBuilder
     gb = GridOptionsBuilder.from_dataframe(data_df)
     # configuramos ancho de columnas
-    gb.configure_column("Campo", header_name="CAMPO", maxWidth=181)
-    gb.configure_column("Piscina", header_name="PS", maxWidth=64)
+    gb.configure_column("campo", header_name="CAMPO", maxWidth=181)
+    gb.configure_column("piscina", header_name="PS", maxWidth=64)
     gb.configure_column("ha", header_name="HA", maxWidth=55, hide=True)
     gb.configure_column(
-        "Fecha Estimada Cosecha",
+        "fecha_estimada_cosecha",
         header_name="FECHA ESTIMADA COSECHA",
         maxWidth=132,
         wrapHeaderText=True,
         autoHeaderHeight=True,
     )
     gb.configure_column(
-        "Días",
+        "dias_proyectados",
         header_name="DIAS",
         maxWidth=65,
         wrapHeaderText=True,
         autoHeaderHeight=True,
     )
     gb.configure_column(
-        "Peso (gr)",
+        "peso_proyectado_gr",
         header_name="PESO (GR)",
         maxWidth=70,
         wrapHeaderText=True,
@@ -151,7 +163,7 @@ def plot_table_with_filters_and_sort(data_df, state_key, project_weight):
         cellStyle=cellstyle_jscode_weight,
     )
     gb.configure_column(
-        "Biomasa (lb/ha)",
+        "biomasa_proyectada_lb_ha",
         header_name="BIOMASA (LB/HA)",
         maxWidth=90,
         wrapHeaderText=True,
@@ -159,7 +171,7 @@ def plot_table_with_filters_and_sort(data_df, state_key, project_weight):
         cellStyle=cellstyle_jscode_load_capacity,
     )
     gb.configure_column(
-        "Biomasa Total (LB)",
+        "biomasa_total_proyectada_lb",
         header_name="BIOMASA TOTAL(LB)",
         maxWidth=100,
         wrapHeaderText=True,
@@ -167,22 +179,28 @@ def plot_table_with_filters_and_sort(data_df, state_key, project_weight):
         hide=True,
     )
     gb.configure_column(
-        "Sobrevivencia final",
+        "sobrevivencia_pesca_proyectada",
         header_name="SOBRE. FINAL",
         maxWidth=145,
         wrapHeaderText=True,
         autoHeaderHeight=True,
     )
-    gb.configure_column("FCA", maxWidth=61, wrapHeaderText=True, autoHeaderHeight=True)
     gb.configure_column(
-        "Costo lb/camaron",
+        "fca",
+        header_name="FCA",
+        maxWidth=61,
+        wrapHeaderText=True,
+        autoHeaderHeight=True,
+    )
+    gb.configure_column(
+        "costo_lb_proyecto",
         header_name="COSTO LB/CAMARON",
         maxWidth=115,
         wrapHeaderText=True,
         autoHeaderHeight=True,
     )
     gb.configure_column(
-        "UP($/ha/dia)",
+        "up_proyecto",
         header_name="UP ($/HA/DIA)",
         maxWidth=97,
         wrapHeaderText=True,
@@ -190,16 +208,16 @@ def plot_table_with_filters_and_sort(data_df, state_key, project_weight):
         cellStyle=cellstyle_jscode_up,
     )
     gb.configure_column(
-        "ROI(%)",
+        "roi_proyecto",
         maxWidth=80,
         wrapHeaderText=True,
         autoHeaderHeight=True,
         cellStyle=cellstyle_jscode_roi,
-        hide=True
+        hide=True,
     )
     gb.configure_column(
-        "Precio venta pesca final ($/Kg)",
-        header_name="PRECIO PONDERADO FINAL ($/kg)",
+        "precio_venta_lbs_con_rendimiento",
+        header_name="PRECIO PONDERADO FINAL ($/Lb)",
         maxWidth=155,
         wrapHeaderText=True,
         autoHeaderHeight=True,
@@ -232,15 +250,11 @@ def plot_table_with_filters_and_sort(data_df, state_key, project_weight):
     gb.configure_column("IsLoadCapacity", hide=True)
     gb.configure_selection(selection_mode="multiple", use_checkbox=True)
     gb.configure_grid_options(
-        onSelectionChanged=checkbox_event_jscode,
+        # onSelectionChanged=checkbox_event_jscode,
+        # Aplica estilos condicionales a toda la fila
         getRowStyle=row_style_jscode,
-    )  # Aplica estilos condicionales a toda la fila
+    )
     gridOptions = gb.build()
-
-    # Definir estilos personalizados para el encabezado
-
-    # CSS personalizado para cambiar el color de fondo en el estado de hover
-
     cols_table = st.columns([1])
     with cols_table[0]:
         # Muestra el DataFrame en un AgGrid con tamaño fijo y desplazamiento
@@ -256,21 +270,39 @@ def plot_table_with_filters_and_sort(data_df, state_key, project_weight):
             update_mode=GridUpdateMode.SELECTION_CHANGED,
         )
 
-    # DataFrame para almacenar las filas seleccionadas
+    # guardamos en el estado las filas seleccionadas
+    selected_rows = grid_table["selected_rows"]
+    st.session_state.selected_rows = selected_rows
+    # st.session_state.selected_rows = pd.concat([st.session_state.selected_rows,grid_table["selected_rows"] ])
+    # st.session_state.selected_rows= st.session_state.selected_rows.drop_duplicates()
+    # st.session_state[state_key] = grid_table["selected_rows"]
 
-    # Update session state with the current selection
-    st.session_state[state_key] = grid_table["selected_rows"]
 
+def plot_table_groupped(data_df: pd.DataFrame) -> None:
+    """
+    Esta ``función`` muestra la tabla de datos reales
 
-def plot_table_groupped(data_df):
-    ### calculamos los invididuos actuales de campo y consumo
-    data_df['ind_campo'] = data_df['porcentaje_sob_campo']* data_df['densidad_siembra']
-    data_df['ind_consumo'] = data_df['sobrevivencia_consumo']* data_df['densidad_siembra']
-    data_df['porcentaje_sob_campo'] = round(data_df['porcentaje_sob_campo']*100,1)
-    data_df['sobrevivencia_consumo'] = data_df['sobrevivencia_consumo']*100
-    data_df['sobrevivencia_consumo'] = round(data_df['sobrevivencia_consumo'],1)
-    data_df['porcentaje_sob_campo'] = np.vectorize(create_sob_and_ind_in_column)(data_df['porcentaje_sob_campo'],data_df['ind_campo'])
-    data_df['sobrevivencia_consumo'] = np.vectorize(create_sob_and_ind_in_column)(data_df['sobrevivencia_consumo'],data_df['ind_consumo'])
+    Args:
+        data_df (dataframe): pandas dataframe con los datos de las proyecciones
+    Raises:
+        ValueError: Si faltan columnas requeridas en el DataFrame.
+    Returns:
+        Retorna None
+    """
+    # calculamos los invididuos actuales de campo y consumo
+    data_df["ind_campo"] = data_df["porcentaje_sob_campo"] * data_df["densidad_siembra"]
+    data_df["ind_consumo"] = (
+        data_df["sobrevivencia_consumo"] * data_df["densidad_siembra"]
+    )
+    data_df["porcentaje_sob_campo"] = round(data_df["porcentaje_sob_campo"] * 100, 1)
+    data_df["sobrevivencia_consumo"] = data_df["sobrevivencia_consumo"] * 100
+    data_df["sobrevivencia_consumo"] = round(data_df["sobrevivencia_consumo"], 1)
+    data_df["porcentaje_sob_campo"] = np.vectorize(create_sob_and_ind_in_column)(
+        data_df["porcentaje_sob_campo"], data_df["ind_campo"]
+    )
+    data_df["sobrevivencia_consumo"] = np.vectorize(create_sob_and_ind_in_column)(
+        data_df["sobrevivencia_consumo"], data_df["ind_consumo"]
+    )
     data_df.rename(
         columns={
             "campo": "CAMPO",
@@ -288,28 +320,28 @@ def plot_table_groupped(data_df):
             "fecha_muestreo": "ULTIMA FECHA MUESTREO",
             "alimento_acumulado": "ALIMENTO ACUMULADO KG",
             "porcentaje_sob_campo": "ÚLTIMA SOB. CAMPO",
-            "sobrevivencia_consumo": "ÚLTIMA SOB. CONSUMO"
+            "sobrevivencia_consumo": "ÚLTIMA SOB. CONSUMO",
         },
         inplace=True,
     )
     data_df = data_df.groupby("PISCINA").agg(
-    {
-        "FECHA SIEMBRA": get_last,
-        "ULTIMA FECHA MUESTREO": get_last,
-        "ÚLTIMO DÍA DATA REAL": "median",
-        "PESO SIEMBRA": "median",
-        "DENSIDAD SIEMBRA": "median",
-        "ÚLTIMO PESO TOMADO": "median",
-        "CREC ULT 4 SEMANAS": "median",
-        "ÚLTIMA SOB. CAMPO": get_last,
-        "ÚLTIMA SOB. CONSUMO": get_last,
-        "COSTO FIJO ($/HA/DIA)": "median",
-        "COSTO MIX (KG)": "median",
-        "COSTO MILLAR": "median",
-        "KG AABB/DIA TOTAL": "median",
-        "ALIMENTO ACUMULADO KG": "median",
-    }
-)
+        {
+            "FECHA SIEMBRA": get_last,
+            "ULTIMA FECHA MUESTREO": get_last,
+            "ÚLTIMO DÍA DATA REAL": "median",
+            "PESO SIEMBRA": "median",
+            "DENSIDAD SIEMBRA": "median",
+            "ÚLTIMO PESO TOMADO": "median",
+            "CREC ULT 4 SEMANAS": "median",
+            "ÚLTIMA SOB. CAMPO": get_last,
+            "ÚLTIMA SOB. CONSUMO": get_last,
+            "COSTO FIJO ($/HA/DIA)": "median",
+            "COSTO MIX (KG)": "median",
+            "COSTO MILLAR": "median",
+            "KG AABB/DIA TOTAL": "median",
+            "ALIMENTO ACUMULADO KG": "median",
+        }
+    )
     data_df = data_df.sort_values(by="ÚLTIMO DÍA DATA REAL", ascending=False)
     data_df.reset_index(inplace=True)
     data_df = data_df.round(2)
@@ -365,7 +397,10 @@ def plot_table_groupped(data_df):
         "KG AABB/DIA TOTAL", maxWidth=95, wrapHeaderText=True, autoHeaderHeight=True
     )
     gb.configure_column(
-        "ALIMENTO ACUMULADO KG", maxWidth=109, wrapHeaderText=True, autoHeaderHeight=True
+        "ALIMENTO ACUMULADO KG",
+        maxWidth=109,
+        wrapHeaderText=True,
+        autoHeaderHeight=True,
     )
     gb.configure_column(
         "ÚLTIMA SOB. CAMPO", maxWidth=145, wrapHeaderText=True, autoHeaderHeight=True
@@ -396,30 +431,3 @@ def plot_table_groupped(data_df):
             custom_css=TABLE_STYLE,  # Aplica el CSS personalizado
             update_mode=GridUpdateMode.SELECTION_CHANGED,
         )
-
-    # st.dataframe(data_df.round(2))
-
-
-def plot_table_prices(data_df, state_key):
-    # Crea un GridOptionsBuilder
-    gb = GridOptionsBuilder.from_dataframe(data_df)
-    gb.configure_pagination(
-        paginationAutoPageSize=False, enabled=False
-    )  # Habilita la paginación
-    gb.configure_default_column(
-        filter=True, sortable=True
-    )  # Habilita el filtrado y la ordenación en cada columna
-    gb.configure_column("Precios", editable=True, maxWidth=180)
-    gb.configure_column("Tallas", editable=False, maxWidth=280)
-    gridOptions = gb.build()
-    grid_table = AgGrid(
-        data_df,
-        gridOptions=gridOptions,
-        enable_enterprise_modules=True,
-        allow_unsafe_jscode=True,  # Esta opción permite usar JavaScript no seguro
-        theme=AgGridTheme.STREAMLIT,  # Cambia el tema si lo deseas
-        height=300,
-        width="100%",  # Especifica el ancho en píxeles o porcentaje
-        update_mode=GridUpdateMode.SELECTION_CHANGED,
-    )
-    st.session_state[state_key] = grid_table["data"]

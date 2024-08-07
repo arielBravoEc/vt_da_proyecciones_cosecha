@@ -1,8 +1,20 @@
+import pandas as pd
+
+
 def get_last(df):
     return df.iloc[-1]
 
 
-def group_and_get_last_week_by_pool(data_df):
+def group_and_get_last_week_by_pool(data_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Esta ``función`` agrupa los datos del evat obteniendo el ultimo dato de cada
+    piscina para hacer la proyeccion
+    Args:
+        data_df (Pandas dataframe): Datos del evat.
+
+    Returns:
+        Retorna pandas dataframe
+    """
     data_df = data_df.sort_values(["id", "fecha_muestreo"], ascending=[True, True])
     evat_ultima_semana_df = data_df.groupby("id").agg(
         {
@@ -34,6 +46,7 @@ def group_and_get_last_week_by_pool(data_df):
             "sobrevivencia_consumo": get_last,
         }
     )
+
     evat_ultima_semana_df = evat_ultima_semana_df.reset_index(drop=True)
     evat_ultima_semana_df = evat_ultima_semana_df.sort_values(
         ["id_piscina", "fecha_muestreo"], ascending=[True, True]
@@ -68,4 +81,5 @@ def group_and_get_last_week_by_pool(data_df):
             "sobrevivencia_consumo": get_last,
         }
     )
+
     return evat_ultima_semana_df

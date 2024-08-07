@@ -2,7 +2,17 @@ import pandas as pd
 import numpy as np
 
 
-def clean_nulls_and_fill_nan(data_df):
+def clean_nulls_and_fill_nan(data_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Esta ``función`` elimina del dataframe original valores nulos
+    y faltantes de los principales indicadores
+
+    Args:
+        data_df (Pandas dataframe): Datos del evat.
+
+    Returns:
+        Retorna pandas dataframe
+    """
     data_df["peso_raleo_1"] = data_df["peso_raleo_1"].fillna(0)
     data_df["peso_raleo_2"] = data_df["peso_raleo_2"].fillna(0)
     data_df["peso_raleo_3"] = data_df["peso_raleo_3"].fillna(0)
@@ -48,9 +58,21 @@ def clean_nulls_and_fill_nan(data_df):
     return data_df
 
 
-def clean_no_sense_values(data_df):
-    ## eliminamos ps 132 de aglipesca debido a que es precria
-    data_df = data_df.drop(data_df[(data_df['piscina'] == '132') & (data_df['campo'] == 'AGLIPESCA')].index)
+def clean_no_sense_values(data_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Esta ``función`` elimina del dataframe original valores fuera de
+    contexto y que no tienen sentido
+
+    Args:
+        data_df (Pandas dataframe): Datos del evat.
+
+    Returns:
+        Retorna pandas dataframe
+    """
+    # eliminamos ps 132 de aglipesca debido a que es precria
+    data_df = data_df.drop(
+        data_df[(data_df["piscina"] == "132") & (data_df["campo"] == "AGLIPESCA")].index
+    )
     data_df = data_df[data_df["densidad_siembra_ind_m2"] > 2]
     data_df = data_df[data_df["densidad_siembra_ind_m2"] < 60]
     data_df = data_df[data_df["peso_siembra_gr"] > 0.1]
@@ -72,7 +94,21 @@ def clean_no_sense_values(data_df):
     return data_df
 
 
-def filter_cycles_close_to_hasrvest(data_df, min_dias):
+def filter_cycles_close_to_hasrvest(
+    data_df: pd.DataFrame, min_dias: int
+) -> pd.DataFrame:
+    """
+    Esta ``función`` elimina del dataframe datos de piscinas que no están
+    cerca de cosecharse de acerdo a un minimo de días establecido
+
+    Args:
+        data_df (Pandas dataframe): Datos del evat.
+        min_dias (int): mínimo de  días para considerar si un ciclo
+        está cerca de cosecha y puede ser analizado.
+
+    Returns:
+        Retorna pandas dataframe
+    """
     # filtramos las piscinas que su dia de cultivo es mayor a sus dias de proyecto
     data_df = data_df[data_df["dias_cultivo"] < data_df["dias_proyecto"]]
     data_df["diff_dias"] = data_df["dias_proyecto"] - data_df["dias_cultivo"]

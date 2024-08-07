@@ -1,28 +1,44 @@
 import streamlit as st
 from streamlit_extras.stylable_container import stylable_container
 from utils.data_generation_helper import export_df_to_pdf, export_to_csv, export_to_xlsx
+from constants.graphs_constants import PLOT_MAPPING_VARIABLES_NAME
 
 
-def show_modal():
-    st.dataframe(
-        st.session_state.selected_rows.drop(
-            [
-                "aguaje",
-                "IsMax",
-                "IsMax_Up",
-                "IsProjectWeight",
-                "ROI(%)",
-                "capacidad_de_carga_lbs_ha",
-                "IsLoadCapacity",
-            ],
-            axis=1,
-        )
+def show_modal() -> None:
+    """
+    Esta ``función`` muestra el contenido del modal
+    cuando se haga click en abrir selección
+    Args: None
+    Raises:
+        ValueError: Si faltan columnas requeridas en el DataFrame.
+    Returns:
+        Retorna None
+    """
+    # creamos una copia para trabaja en ella
+    data_df_modal = st.session_state.selected_rows.copy()
+    # eliminamos columnas que no necesitamos
+    data_df_modal = data_df_modal.drop(
+        [
+            "aguaje",
+            "IsMax",
+            "IsMax_Up",
+            "IsProjectWeight",
+            "roi_proyecto",
+            "capacidad_de_carga_lbs_ha",
+            "IsLoadCapacity",
+        ],
+        axis=1,
     )
-    # Crear un botón para exportar el DataFrame a PDF
-    # if st.button('Exportar a PDF'):
-    # export_df_to_pdf(st.session_state.selected_rows, 'proyecciones.pdf')
-
-    buffer = export_df_to_pdf(st.session_state.selected_rows)
+    # renombramos columnas para mostrar en la tabla y cuando guardamos
+    existing_columns = {
+        k: v
+        for k, v in PLOT_MAPPING_VARIABLES_NAME.items()
+        if k in data_df_modal.columns
+    }
+    data_df_modal = data_df_modal = data_df_modal.rename(columns=existing_columns)
+    st.dataframe(data_df_modal)
+    # creamos el buffer para exportar como pdf
+    buffer = export_df_to_pdf(data_df_modal)
     dowload_button = st.columns(7)
     with dowload_button[0]:
         with stylable_container(
@@ -62,18 +78,7 @@ def show_modal():
         ):
             st.download_button(
                 label="Descargar CSV",
-                data=export_to_csv(
-                    st.session_state.selected_rows.drop(
-                        [
-                            "IsMax",
-                            "IsMax_Up",
-                            "IsProjectWeight",
-                            "ROI(%)",
-                            "IsLoadCapacity",
-                        ],
-                        axis=1,
-                    )
-                ),
+                data=export_to_csv(data_df_modal),
                 file_name="proyecciones.csv",
                 mime="text/csv",
             )
@@ -94,18 +99,7 @@ def show_modal():
         ):
             st.download_button(
                 label="Descargar Excel",
-                data=export_to_xlsx(
-                    st.session_state.selected_rows.drop(
-                        [
-                            "IsMax",
-                            "IsMax_Up",
-                            "IsProjectWeight",
-                            "ROI(%)",
-                            "IsLoadCapacity",
-                        ],
-                        axis=1,
-                    )
-                ),
+                data=export_to_xlsx(data_df_modal),
                 file_name="proyecciones.xlsx",
                 mime="text/xlsx",
             )
