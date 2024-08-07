@@ -6,7 +6,7 @@ from sqlalchemy import create_engine
 import mysql.connector as connection
 
 
-def get_evat_data(farm_name: str) -> pd.Dataframe:
+def get_evat_data(farm_name: str) -> pd.DataFrame:
     """
     Esta ``función`` obtiene datos del evat de la base de datos de genIA
     Args:
