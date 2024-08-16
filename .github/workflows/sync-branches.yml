@@ -15,6 +15,7 @@ jobs:
           - naturisa
           - eguiguren
           - acuarios
+          - chongon
           # Agrega más ramas aquí según sea necesario
     steps:
       - name: Checkout repository

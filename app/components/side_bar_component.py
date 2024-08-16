@@ -14,6 +14,7 @@ import pandas as pd
 def update_lineal_feed():
     if st.session_state.checkbox_lineal_feed:
         st.session_state.checkbox_dinamycal_feed = False
+        st.session_state.checkbox_bw_feed = False
 
 
 # actualizamos el checkbox cuando el usuario selecciona sobrevivencia de campo
@@ -32,6 +33,14 @@ def update_sob_consumo():
 def update_dynamic_feed():
     if st.session_state.checkbox_dinamycal_feed:
         st.session_state.checkbox_lineal_feed = False
+        st.session_state.checkbox_bw_feed = False
+
+
+# cuando usamos proyeccion de alimento por bw
+def update_bw_feed():
+    if st.session_state.checkbox_bw_feed:
+        st.session_state.checkbox_lineal_feed = False
+        st.session_state.checkbox_dinamycal_feed = False
 
 
 def sidebar(
@@ -137,6 +146,11 @@ def sidebar(
         "Usar esta configuración de capacidad de carga"
     )
     st.write("#### Proyección de alimento:")
+    st.checkbox(
+        "Usar Curva %BW",
+        key="checkbox_bw_feed",
+        on_change=update_bw_feed,
+    )
     # Crear los checkboxes
     st.checkbox(
         "Usar alimentación lineal",
@@ -152,6 +166,7 @@ def sidebar(
         "Ingrese el porcentaje de aumento de alimento: ", 0, 30, percentage_feed_default
     )
     st.write("Aumento del", st.session_state.percentage_dynamical_feed, "%")
+
     st.write("#### Sobrevivencia:")
     st.checkbox(
         "Usar sobreviencia campo",

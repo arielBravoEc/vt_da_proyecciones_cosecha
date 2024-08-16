@@ -5,6 +5,8 @@ from fpdf import FPDF
 import io
 import datetime
 import pytz
+from catalog.projections_catalog import get_bw_data
+from constants.general import BW_SHEET_NAME_NORMALIZER
 
 
 def create_sob_and_ind_in_column(sob_column: float, ind_column: float) -> str:
@@ -20,6 +22,26 @@ def create_sob_and_ind_in_column(sob_column: float, ind_column: float) -> str:
     return str(round(sob_column, 1)) + " % | " + str(round(ind_column, 1)) + " ind/m2"
 
 
+def create_feed_and_feed_ha_column(
+    total_feed_day: float, total_feed_ha_dia: float
+) -> str:
+    """
+    Esta ``función`` crea un string combiando el alimento total y por ha
+
+    Args:
+        total_feed_day (float): alimento total.
+        total_feed_ha_dia (float): alimento por ha.
+    Returns:
+        Retorna str
+    """
+    return (
+        str(round(total_feed_day, 1))
+        + " kg total | "
+        + str(round(total_feed_ha_dia, 1))
+        + " kg/ha"
+    )
+
+
 # creamos id de ciclo
 def get_id(Campo: str, Ps: str, FechaSiembra) -> str:
     return Campo + "-" + str(Ps) + "-" + str(FechaSiembra)[0:10]
@@ -27,6 +49,12 @@ def get_id(Campo: str, Ps: str, FechaSiembra) -> str:
 
 def get_id_ps(Campo: str, Ps: str) -> str:
     return Campo + "-" + str(Ps)
+
+
+def find_closest_values(s, x):
+    # con esta funcion obtenemos el valor entero mas cercano de un float
+    idx = (np.abs(s - x)).argmin()
+    return s[idx]
 
 
 def generate_distribution_price_by_weight(
@@ -105,11 +133,6 @@ def generate_distribution_price_by_weight(
             [precio_ponderado_df, pd.DataFrame(new_row)], ignore_index=True
         )
 
-    def find_closest_values(s, x):
-        # con esta funcion obtenemos el valor entero mas cercano de un float
-        idx = (np.abs(s - x)).argmin()
-        return s[idx]
-
     def get_price(weight):
         # obtenemos el precio de venta en base a las funciones creadas
         if (weight == 0) or math.isnan(weight):
@@ -146,14 +169,70 @@ def generate_distribution_price_by_weight(
     return data_df
 
 
+def generate_bw_feed(farm_name: str, data_df: pd.DataFrame) -> list:
+    """
+    Esta ``función`` procesa un dataframe con un dato para cada piscina y genera su
+    alimento acumulado en base a su bw
+    Args:
+        farm_name (str): Nombre del campo para identificarlo en el spreadsheet.
+        data_df (pandas dataframe): dataframe con informacion de la pisicna,
+        ultimo peso, crecimiento 4 semanas, ultima sob, mortalidad semanal,
+        dia que queremos proyectar el alimento acumulado, alimento acumulado hasta el momento
+    Returns:
+        Retorna lista con el alimento acumulado para cada proyeccion de cada piscina
+    """
+    # obtemeos los datos de bw en base a la finca
+    if farm_name in BW_SHEET_NAME_NORMALIZER:
+        farm_name_normalized = BW_SHEET_NAME_NORMALIZER[farm_name]
+    else:
+        farm_name_normalized = "defecto"
+    bw_df = get_bw_data(farm_name_normalized)
+    # lista para guardar los valores acumulados de cada proyeccion para cada piscina.
+    feed_acum_lst = []
+    for index, row in data_df.iterrows():
+        # iteramos cada piscina
+        feed = row["alimento_acumulado"]
+        weight = row["peso_actual_gr"]
+        sob = row["sob_ultima"]
+        # iteramos cada día que falta para llegar al proyecto
+        # pora ir sumando el alimento en base al bw
+        for dia in range(1, row["Días restantes para cumplir proyecto"] + 1):
+            sob = sob - (row["Mortalidad semanal"] / 7)
+            weight = weight + (row["crecimiento_ultimas_4_semanas"] / 7)
+            actual_density = (sob / 100) * row["densidad_siembra_ind_m2"]
+            # obtenemos el valor mas cercano en la tabla de bw
+            closest_weight = find_closest_values(
+                pd.to_numeric(bw_df["Peso(gr)"]), weight
+            )
+            bw = bw_df[bw_df["Peso(gr)"] == closest_weight].iloc[0][1]
+            # transfortmamos bw de por ejemplo 0.1 a 10
+            bw = bw * 100
+            # alimento total por ha en base a la curva con el crec y mortalidad del dia
+            feed_kg_ha = (bw * actual_density * weight) / 10
+            # multiplicamos por ha para obtener el total
+            feed_total_dia = feed_kg_ha * row["ha"]
+            # sumamos al alimento acumulado del dia anterior
+            feed = feed + feed_total_dia
+            # print("total feed: ", feed)
+        # guardamos el alimento acumulado
+        feed_acum_lst.append(feed)
+    data_df["alimento_cumulado_proy"] = feed_acum_lst
+    print(data_df)
+    # retornamos la lista con el alimento acumulado para cada piscina
+    return feed_acum_lst
+
+
 def generate_proyection(
+    farm_name: str,
     data_df: pd.DataFrame,
     project_survival: float,
     project_duration: int,
     price_df: pd.DataFrame,
     distribution_df: pd.DataFrame,
     dias_ciclo_finales: int = None,
-    is_using_lineal_feed: bool = True,
+    is_using_lineal_feed: bool = False,
+    is_using_dynamical_feed: bool = False,
+    empty_days: int = 10,
     percentage_dynamical_feed: int = None,
     is_using_sob_campo: bool = True,
     percentage_sob: int = 0,
@@ -171,6 +250,11 @@ def generate_proyection(
         dias_ciclo_finales (int): valor que aumenta o disminuye el día de proyeccion.
         is_using_lineal_feed (bool): booleano que indica si se está usando
         alimentación de manera lineal para la proyección.
+        is_using_dynamical_feed (bool): booleano que indica si se está usando
+        alimentación con un aumento porcentual para la proyección.
+        is_using_bw_feed (bool): booleano que indica si se está usando
+        alimentación en base a la curva de bw.
+        empty_days (int): valor que indica los días secos
         percentage_dynamical_feed (int): porcentaje de aumento de alimento en la proyeccion
         (sirve cuando se selecciona proyectar el alimento de manera dinamica)
         is_using_sob_campo (bool): booleano que indica si se está usando son de campo o
@@ -189,20 +273,64 @@ def generate_proyection(
         (data_df["Días restantes para cumplir proyecto"] / 7)
         * data_df["crecimiento_ultimas_4_semanas"]
     ) + data_df["peso_actual_gr"]
+    data_df["Mortalidad semanal"] = (
+        (100 - (project_survival * 100)) / project_duration
+    ) * 7
     if is_using_lineal_feed:
         # si us alimento lineal
         data_df["Kilos AABB Totales para cumplir proyecto"] = (
             data_df["Días restantes para cumplir proyecto"] * data_df["kgab_dia"]
         ) + data_df["alimento_acumulado"]
-    else:
+    elif is_using_dynamical_feed:
         # usa alimento dinamico + porcentaje
         data_df["Kilos AABB Totales para cumplir proyecto"] = (
             data_df["Días restantes para cumplir proyecto"]
             * (data_df["kgab_dia"] * (1.0 + (percentage_dynamical_feed / 100)))
         ) + data_df["alimento_acumulado"]
-    data_df["Mortalidad semanal"] = (
-        (100 - (project_survival * 100)) / project_duration
-    ) * 7
+    else:
+        # usa alimento por bw
+        # con sob consumo
+        if not is_using_sob_campo:
+            data_df["sob_ultima"] = (
+                data_df[["sobrevivencia_consumo"]] * 100
+            ) + percentage_sob
+            data_df["Kilos AABB Totales para cumplir proyecto"] = generate_bw_feed(
+                farm_name,
+                data_df[
+                    [
+                        "piscina",
+                        "ha",
+                        "Días restantes para cumplir proyecto",
+                        "peso_actual_gr",
+                        "crecimiento_ultimas_4_semanas",
+                        "sob_ultima",
+                        "Mortalidad semanal",
+                        "alimento_acumulado",
+                        "densidad_siembra_ind_m2",
+                    ]
+                ],
+            )
+        else:
+            data_df["sob_ultima"] = (
+                data_df[["porcentaje_sob_campo"]] * 100
+            ) + percentage_sob
+            data_df["Kilos AABB Totales para cumplir proyecto"] = generate_bw_feed(
+                farm_name,
+                data_df[
+                    [
+                        "piscina",
+                        "ha",
+                        "Días restantes para cumplir proyecto",
+                        "peso_actual_gr",
+                        "crecimiento_ultimas_4_semanas",
+                        "sob_ultima",
+                        "Mortalidad semanal",
+                        "alimento_acumulado",
+                        "densidad_siembra_ind_m2",
+                    ]
+                ],
+            )
+        # data_df["Kilos AABB Totales para cumplir proyecto"] = data_df["alimento_acumulado"]
     if not is_using_sob_campo:
         # si usa la sob de consumo
         data_df["Sobrevivencia final de ciclo proyecto (%)"] = (
@@ -251,8 +379,8 @@ def generate_proyection(
         data_df["Días restantes para cumplir proyecto"], unit="D"
     )
     # calculamos indicadores economicos para la proyeccion a cosecha
-    data_df["Costo Fijo ($/Ha)"] = (
-        data_df["costo_fijo_ha_dia"] * data_df["Días de ciclo finales"]
+    data_df["Costo Fijo ($/Ha)"] = data_df["costo_fijo_ha_dia"] * (
+        data_df["Días de ciclo finales"] + empty_days
     )
     data_df["Costo de Larva ($/Ha)"] = data_df["costo_millar_larva"] * (
         data_df["densidad_siembra_ind_m2"] * 10

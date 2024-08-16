@@ -1,9 +1,17 @@
 # import psycopg2
 import pandas as pd
+import requests
 import os
 import streamlit as st
 from sqlalchemy import create_engine
 import mysql.connector as connection
+from office365.sharepoint.client_context import ClientContext
+from office365.sharepoint.files.file import File
+from office365.runtime.auth.authentication_context import AuthenticationContext
+from msal import ConfidentialClientApplication
+from oauthlib.oauth2 import BackendApplicationClient
+from requests_oauthlib import OAuth2Session
+import io
 
 
 def get_evat_data(farm_name: str) -> pd.DataFrame:
@@ -210,4 +218,19 @@ def get_evat_data_test(
     print("Conexión exitosa")
     data_df = pd.read_sql_query(query, engine)
 
+    return data_df
+
+
+def get_bw_data(sheet_name: str) -> pd.DataFrame:
+    dir_actual = os.getcwd()
+    # print("Ruta del directorio actual:", dir_actual)
+    ruta_excel = os.path.join(
+        dir_actual, "app", "static", "data", "Bw_proyecciones_de_cosecha.xlsx"
+    )
+    ##validamos el sheetname
+    # tomamos aglipesca como valor por defecto para validar
+    sheet_name_normalized = "Aglipesca"
+    if sheet_name == "MATORRILLOS":
+        sheet_name_normalized = "Matorrillos"
+    data_df = pd.read_excel(ruta_excel, sheet_name=sheet_name_normalized)
     return data_df

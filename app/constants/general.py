@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 from catalog.projections_catalog import get_excel_data
 import streamlit as st
 
+# query_params = st.experimental_get_query_params()
 
 # FECHA ACTUAL
 # FECHA_ACTUAL = datetime.now() - timedelta(days=70)
@@ -50,6 +51,8 @@ VARIABLES_INTERES = [
 
 
 farm_key = st.secrets["CLIENTE"]
+# obtenemos el cliente de la url, por defecto va a ser pesfalan
+# farm_key = st.query_params.get("cliente", "PESFALAN")
 DIAS_PROYECTO_DEFECTO = 90
 SOB_PROYECTO_DEFECTO = 0.60
 PESO_PROYECTO_DEFECTO = 30.0
@@ -86,6 +89,14 @@ elif farm_key == "ACUARIOS":
     DIAS_PROYECTO_DEFECTO = 70
     SOB_PROYECTO_DEFECTO = 0.61
     PESO_PROYECTO_DEFECTO = 27.5
+elif farm_key == "CHONGON":
+    FARMS = ("OMARSA CHONGON",)
+    DIAS_PROYECTO_DEFECTO = 70
+    SOB_PROYECTO_DEFECTO = 0.61
+    PESO_PROYECTO_DEFECTO = 27.5
+    COSTO_MILLAR_DEFECTO = 3.50
+    COSTO_MIX_DEFECTO = 1.29
+    COSTO_FIJO_DEFECTO = 30.0
 
 else:
     FARMS = ("CAMARONES NATURISA", "CAMINO REAL", "MARCHENA")
@@ -107,3 +118,16 @@ DEFAULT_CONFIG = {
     "use_personalize_config_prices": False,
     "DIAS_SECADO": 10,
 }
+
+BW_SHEET_NAME_NORMALIZER = {
+    "AGLIPESCA": "aglipesca",
+    "OMARSA CHONGON": "chongon",
+    "CAMARONES NATURISA": "camarones naturisa",
+    "CAMINO REAL": "camino real",
+    "MARCHENA": "marchena",
+    "CALICA": "calica",
+    "CHURUTE": "churute",
+    "AGLIPESCA": "aglipesca",
+}
+
+MESSAGE_ERROR_NULLS = """Existen datos, pero con valores nulos en variables claves para generar la proyección.\n \nRevisar nulos en: fechas, pesos, sobrevivencias, costos, crecimientos, etc.\n \nPosibles causas y soluciones:\n \n Causa: No se ingresan los costos en el evat. Solución: Ingresar los costos en la configuración."""

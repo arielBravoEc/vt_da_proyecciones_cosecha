@@ -30,7 +30,7 @@ from Tests.test_constants import (
 from catalog.projections_catalog import get_bench_data_for_test
 
 
-bench_df = get_bench_data_for_test(CLIENT_NAME_BENCH, "2024-05-01")
+bench_df = get_bench_data_for_test(CLIENT_NAME_BENCH, "2024-06-01")
 # en el caso de aglipessca quitamos los primeros 3 caracteres para hacer match con el bench
 bench_df["NombrePiscina"] = np.where(
     bench_df["NombreCampo"] == "AGLIPESCA",
@@ -43,7 +43,7 @@ for i in range(1, 4):
     for index, row in bench_df.iterrows():
         row_proyection = row
         row_proyection["SemanaProyectada"] = i
-        week_date = row["FechaCosecha"] - timedelta(days=6 * i)
+        week_date = row["FechaCosecha"] - timedelta(days=7 * i)
         row_proyection["FechaProyeccion"] = week_date
         proy_data = get_projections(
             farm_name=CLIENT_NAME_EVAT,
@@ -54,9 +54,9 @@ for i in range(1, 4):
             is_using_personalized_price=True,
             prices_table=PRICES_DF,
             cost_info={
-                "mix": COSTO_MIX,
-                "millar": COSTO_MILLAR,
-                "fijo": COSTO_FIJO,
+                "mix": row["PrecioMixAlimento"],
+                "millar": row["PrecioLarva"],
+                "fijo": row["CostoFijo_HaDia"],
             },
             is_using_personalized_load_capacity=True,
             load_capacity=10000,
@@ -76,23 +76,29 @@ for i in range(1, 4):
                 "costo_fijo_ha_dia"
             ][0]
             row_proyection["FCA_Proyeccion"] = proy_data["fca"][0]
-            row_proyection["PesoPescaProyeccion"] = proy_data["peso"][0]
+            row_proyection["PesoPescaProyeccion"] = proy_data["peso_proyectado_gr"][0]
             row_proyection["PrecioCamaronPesca_Proyeccion"] = proy_data[
-                "precio_venta_pesca"
+                "precio_venta_pesca_kg"
             ][0]
             row_proyection["AlimentoAcumuladoKg_Proyeccion"] = proy_data[
                 "Kilos AABB Totales para cumplir proyecto"
             ][0]
-            row_proyection["SobPesca_Proyeccion"] = proy_data["sobrevivencia"][0]
+            row_proyection["SobPesca_Proyeccion"] = proy_data[
+                "sobrevivencia_pesca_proyectada"
+            ][0]
             row_proyection["PrecioMixAlimento_Proyeccion"] = proy_data[
                 "costo_mix_alimento_kg"
             ][0]
             row_proyection["PrecioLarva_Proyeccion"] = proy_data["costo_millar_larva"][
                 0
             ]
-            row_proyection["BiomasaPescaLbHa_Proyeccion"] = proy_data["biomasa"][0]
-            row_proyection["CostoLbCamaron_Proyeccion"] = proy_data["costo"][0]
-            row_proyection["UP_HaDia_Proyeccion"] = proy_data["up"][0]
+            row_proyection["BiomasaPescaLbHa_Proyeccion"] = proy_data[
+                "biomasa_proyectada_lb_ha"
+            ][0]
+            row_proyection["CostoLbCamaron_Proyeccion"] = proy_data[
+                "costo_lb_proyecto"
+            ][0]
+            row_proyection["UP_HaDia_Proyeccion"] = proy_data["up_proyecto"][0]
             row_proyection["UltimaSobCampo"] = proy_data["porcentaje_sob_campo"][0]
             row_proyection["UltimoPesoMuestreo"] = proy_data["peso_actual"][0]
             row_proyection["UltimaSobConsumo"] = proy_data["sobrevivencia_consumo"][0]

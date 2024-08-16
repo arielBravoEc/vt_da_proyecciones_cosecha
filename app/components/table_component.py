@@ -10,7 +10,10 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from utils.data_integration_helper import get_last
-from utils.data_generation_helper import create_sob_and_ind_in_column
+from utils.data_generation_helper import (
+    create_sob_and_ind_in_column,
+    create_feed_and_feed_ha_column,
+)
 
 
 def plot_table_with_filters_and_sort(
@@ -303,6 +306,10 @@ def plot_table_groupped(data_df: pd.DataFrame) -> None:
     data_df["sobrevivencia_consumo"] = np.vectorize(create_sob_and_ind_in_column)(
         data_df["sobrevivencia_consumo"], data_df["ind_consumo"]
     )
+    data_df["kgab_ha_dia"] = data_df["kgab_dia"] / data_df["ha"]
+    data_df["kgab_dia"] = np.vectorize(create_feed_and_feed_ha_column)(
+        data_df["kgab_dia"], data_df["kgab_ha_dia"]
+    )
     data_df.rename(
         columns={
             "campo": "CAMPO",
@@ -316,7 +323,7 @@ def plot_table_groupped(data_df: pd.DataFrame) -> None:
             "costo_fijo_ha_dia": "COSTO FIJO ($/HA/DIA)",
             "costo_mix_alimento_kg": "COSTO MIX (KG)",
             "costo_millar_larva": "COSTO MILLAR",
-            "kgab_dia": "KG AABB/DIA TOTAL",
+            "kgab_dia": "AABB DIA",
             "fecha_muestreo": "ULTIMA FECHA MUESTREO",
             "alimento_acumulado": "ALIMENTO ACUMULADO KG",
             "porcentaje_sob_campo": "ÚLTIMA SOB. CAMPO",
@@ -335,11 +342,11 @@ def plot_table_groupped(data_df: pd.DataFrame) -> None:
             "CREC ULT 4 SEMANAS": "median",
             "ÚLTIMA SOB. CAMPO": get_last,
             "ÚLTIMA SOB. CONSUMO": get_last,
+            "AABB DIA": get_last,
+            "ALIMENTO ACUMULADO KG": "median",
             "COSTO FIJO ($/HA/DIA)": "median",
             "COSTO MIX (KG)": "median",
             "COSTO MILLAR": "median",
-            "KG AABB/DIA TOTAL": "median",
-            "ALIMENTO ACUMULADO KG": "median",
         }
     )
     data_df = data_df.sort_values(by="ÚLTIMO DÍA DATA REAL", ascending=False)
@@ -382,6 +389,15 @@ def plot_table_groupped(data_df: pd.DataFrame) -> None:
         "CREC ULT 4 SEMANAS", maxWidth=100, wrapHeaderText=True, autoHeaderHeight=True
     )
     gb.configure_column(
+        "AABB DIA", maxWidth=185, wrapHeaderText=True, autoHeaderHeight=True
+    )
+    gb.configure_column(
+        "ALIMENTO ACUMULADO KG",
+        maxWidth=109,
+        wrapHeaderText=True,
+        autoHeaderHeight=True,
+    )
+    gb.configure_column(
         "COSTO FIJO ($/HA/DIA)",
         maxWidth=100,
         wrapHeaderText=True,
@@ -393,15 +409,7 @@ def plot_table_groupped(data_df: pd.DataFrame) -> None:
     gb.configure_column(
         "COSTO MILLAR", maxWidth=80, wrapHeaderText=True, autoHeaderHeight=True
     )
-    gb.configure_column(
-        "KG AABB/DIA TOTAL", maxWidth=95, wrapHeaderText=True, autoHeaderHeight=True
-    )
-    gb.configure_column(
-        "ALIMENTO ACUMULADO KG",
-        maxWidth=109,
-        wrapHeaderText=True,
-        autoHeaderHeight=True,
-    )
+
     gb.configure_column(
         "ÚLTIMA SOB. CAMPO", maxWidth=145, wrapHeaderText=True, autoHeaderHeight=True
     )

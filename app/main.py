@@ -6,18 +6,17 @@ from constants.general import (
     SOB_PROYECTO_DEFECTO,
     FARMS,
     PESO_PROYECTO_DEFECTO,
+    COSTO_MIX_DEFECTO,
+    COSTO_MILLAR_DEFECTO,
+    COSTO_FIJO_DEFECTO,
+    DIAS_SECADO,
 )
 from constants.css_constants import (
     BACKGROUND_COLOR,
     CONTAINER_CSS,
 )
 
-from constants.general import (
-    COSTO_MIX_DEFECTO,
-    COSTO_MILLAR_DEFECTO,
-    COSTO_FIJO_DEFECTO,
-    DIAS_SECADO,
-)
+
 from utils.proyection_helpers import get_projections
 from utils.data_generation_helper import create_sob_and_ind_in_column
 from components.linechart_component import plot_line_chart, plot_rentability_graph
@@ -30,7 +29,7 @@ from components.table_component import (
 )
 from streamlit_extras.stylable_container import stylable_container
 from streamlit_modal import Modal
-
+from catalog.projections_catalog import get_bw_data
 import warnings
 import numpy as np
 
@@ -41,6 +40,9 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state=st.session_state.setdefault("sidebar_state", "collapsed"),
 )
+# obtenemos el cliente de la url, por defecto va a ser pesfalan
+client = st.query_params.get("cliente", "PESFALAN")
+print(client)
 # inicializamos el almacenamiento local
 # storage = LocalStorage()
 # all_config  = storage.getAll()
@@ -57,7 +59,9 @@ default_config = {
     "COSTO_MIX_DEFECTO": COSTO_MIX_DEFECTO,
     "COSTO_FIJO_DEFECTO": COSTO_FIJO_DEFECTO,
     "load_capacity": 0.0,
-    "is_using_lineal_feed": True,
+    "is_using_lineal_feed": False,
+    "is_using_dynamic_feed": False,
+    "is_using_bw_feed": True,
     "percentage_dynamical_feed": 5,
     "is_using_sob_campo": True,
     "percentage_dynamical_sob": 0,
@@ -65,7 +69,8 @@ default_config = {
     "use_personalize_config_prices": False,
 }
 
-
+# bw = get_bw_data("Aglipesca")
+# print(bw)
 # Cargar las configuraciones guardadas o usarlas por defecto
 # Función para cargar las configuraciones guardadas o usar por defecto
 # def load_config():
@@ -146,9 +151,12 @@ if st.session_state.load_config:
     if "checkbox_lineal_feed" not in st.session_state:
         st.session_state.checkbox_lineal_feed = config["is_using_lineal_feed"]
     if "checkbox_dinamycal_feed" not in st.session_state:
-        st.session_state.checkbox_dinamycal_feed = not config["is_using_lineal_feed"]
+        st.session_state.checkbox_dinamycal_feed = config["is_using_dynamic_feed"]
     if "percentage_dynamical_feed" not in st.session_state:
         st.session_state.percentage_dynamical_feed = config["percentage_dynamical_feed"]
+    if "checkbox_bw_feed" not in st.session_state:
+        st.session_state.checkbox_bw_feed = config["is_using_bw_feed"]
+
     # SOBREVIVENCIA
     if "checkbox_sob_campo" not in st.session_state:
         st.session_state.checkbox_sob_campo = config["is_using_sob_campo"]
@@ -164,6 +172,10 @@ if st.session_state.load_config:
     if "dias_proyecto" not in st.session_state:
         st.session_state.dias_proyecto = None
 
+    if "message_nulls" not in st.session_state:
+        st.session_state.message_nulls = ""
+
+    # para dar un mensaje en caso de error
     # para la seleccion de varias pisicnas
     if "selected_pools" not in st.session_state:
         st.session_state.selected_pools = None
@@ -305,25 +317,30 @@ if st.session_state.load_config:
                         if st.session_state.use_personalize_load_capacity:
                             flag_use_load_capacity = True
 
-                        st.session_state.data = get_projections(
-                            farm_name=farm_selection,
-                            project_duration=st.session_state.dias_proyecto,
-                            project_survival=st.session_state.sob_proyecto,
-                            project_range=range_days,
-                            is_using_personalized_cost=flag_use_cost,
-                            is_using_personalized_price=flag_use_prices,
-                            prices_table=st.session_state.prices_selected_rows,
-                            cost_info={
-                                "mix": st.session_state.costo_mix,
-                                "millar": st.session_state.costo_larva,
-                                "fijo": st.session_state.costo_fijo,
-                            },
-                            is_using_personalized_load_capacity=flag_use_load_capacity,
-                            load_capacity=st.session_state.load_capacity,
-                            is_using_lineal_feed=st.session_state.checkbox_lineal_feed,
-                            percentage_dynamical_feed=st.session_state.percentage_dynamical_feed,
-                            is_using_sob_campo=st.session_state.checkbox_sob_campo,
-                            percentage_sob=st.session_state.percentage_dynamical_sob,
+                        st.session_state.data, st.session_state.message_nulls = (
+                            get_projections(
+                                farm_name=farm_selection,
+                                project_duration=st.session_state.dias_proyecto,
+                                project_survival=st.session_state.sob_proyecto,
+                                project_range=range_days,
+                                is_using_personalized_cost=flag_use_cost,
+                                is_using_personalized_price=flag_use_prices,
+                                prices_table=st.session_state.prices_selected_rows,
+                                cost_info={
+                                    "mix": st.session_state.costo_mix,
+                                    "millar": st.session_state.costo_larva,
+                                    "fijo": st.session_state.costo_fijo,
+                                    "dias_secos": st.session_state.dias_secos,
+                                },
+                                is_using_personalized_load_capacity=flag_use_load_capacity,
+                                load_capacity=st.session_state.load_capacity,
+                                is_using_lineal_feed=st.session_state.checkbox_lineal_feed,
+                                is_using_dynamical_feed=st.session_state.checkbox_dinamycal_feed,
+                                is_using_bw_feed=st.session_state.checkbox_bw_feed,
+                                percentage_dynamical_feed=st.session_state.percentage_dynamical_feed,
+                                is_using_sob_campo=st.session_state.checkbox_sob_campo,
+                                percentage_sob=st.session_state.percentage_dynamical_sob,
+                            )
                         )
 
     # Verificar si los datos están en session_state
@@ -530,6 +547,6 @@ if st.session_state.load_config:
         else:
             # no hay datos
             st.warning(
-                "Para este campo no existen datos de piscinas actualizadas en los últimos 30 días.",
+                st.session_state.message_nulls,
                 icon="⚠️",
             )

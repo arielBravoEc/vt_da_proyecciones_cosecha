@@ -14,6 +14,8 @@ from constants.general import (
     FECHA_MINIMA_ULTIMO_DATO,
     MINIMO_DIAS_PROYECTO,
     VARIABLES_INTERES,
+    DIAS_SECADO,
+    MESSAGE_ERROR_NULLS,
 )
 import streamlit as st
 import numpy as np
@@ -32,6 +34,8 @@ def get_projections(
     is_using_personalized_load_capacity: bool = False,
     load_capacity: float = None,
     is_using_lineal_feed: bool = False,
+    is_using_dynamical_feed: bool = False,
+    is_using_bw_feed: bool = True,
     percentage_dynamical_feed: int = None,
     is_using_sob_campo: bool = False,
     percentage_sob: int = 0,
@@ -59,6 +63,10 @@ def get_projections(
         load_capacity (float): variable con la capacidad de carga personalizada
         is_using_lineal_feed (bool): booleano que indica si se está usando
         alimentación de manera lineal para la proyección.
+        is_using_dynamical_feed (bool): booleano que indica si se está usando
+        alimentación con un aumento porcentual para la proyección.
+        is_using_bw_feed (bool): booleano que indica si se está usando
+        alimentación en base a la curva de bw.
         percentage_dynamical_feed (int): porcentaje de aumento de alimento en la proyeccion
         (sirve cuando se selecciona proyectar el alimento de manera dinamica)
         is_using_sob_campo (bool): booleano que indica si se está usando son de campo o
@@ -96,36 +104,52 @@ def get_projections(
         distribucion_tallas_df = get_excel_data(sheet_name="distribucion")
         # importamos datos de aguaje
         aguajes_df = get_excel_data(sheet_name="aguajes")
+        # dias secos por defecto
+        empty_days = DIAS_SECADO
         # configuramos los nuevos costos en caso de ser personalizado
         if is_using_personalized_cost:
             data_df["costo_mix_alimento_kg"] = cost_info["mix"]
             data_df["costo_millar_larva"] = cost_info["millar"]
             data_df["costo_fijo_ha_dia"] = cost_info["fijo"]
+            empty_days = cost_info["dias_secos"]
         if is_using_personalized_load_capacity:
             data_df["capacidad_de_carga_lbs_ha"] = load_capacity
         # configuramos los nuevos precios en caso de ser personalizado
         if is_using_personalized_price:
             precios_df = prices_table
         # print(prices_table)
-        # llenamos los nulos de raleos y vairables economicas y comprobamos nulos
-
-        evat_consolidado = clean_nulls_and_fill_nan(data_df)
 
         # analizamos las variables para encontrar errores
         # print(data_df[data_df['piscina']== '19'])
-        evat_consolidado = clean_no_sense_values(evat_consolidado)
-
+        # VALIDAMOS QUE SE ELIMINEN DATOS POR VALORES QUE NO TIENEN SENTIDO
+        try:
+            # llenamos los nulos de raleos y vairables economicas y comprobamos nulos
+            evat_consolidado = clean_nulls_and_fill_nan(data_df)
+            evat_consolidado = clean_no_sense_values(evat_consolidado)
+            evat_consolidado["id"] = np.vectorize(get_id)(
+                evat_consolidado["campo"],
+                evat_consolidado["piscina"],
+                evat_consolidado["fecha_siembra"],
+            )
+            evat_consolidado["id_piscina"] = np.vectorize(get_id_ps)(
+                evat_consolidado["campo"], evat_consolidado["piscina"]
+            )
+            # agrupamos para obtener el ultimo dato de cada piscina
+            evat_ultima_semana_df = group_and_get_last_week_by_pool(evat_consolidado)
+        except ValueError as e:
+            if (
+                "cannot call 'vectorize' on size 0 inputs unless 'otypes' is set"
+                in str(e)
+            ):
+                print(
+                    "Error: La entrada es de tamaño 0. Por favor, verifica tus datos."
+                )
+            else:
+                print(f"Error: {e}")
+            return pd.DataFrame(), MESSAGE_ERROR_NULLS
         # creamos id
-        evat_consolidado["id"] = np.vectorize(get_id)(
-            evat_consolidado["campo"],
-            evat_consolidado["piscina"],
-            evat_consolidado["fecha_siembra"],
-        )
-        evat_consolidado["id_piscina"] = np.vectorize(get_id_ps)(
-            evat_consolidado["campo"], evat_consolidado["piscina"]
-        )
-        # agrupamos para obtener el ultimo dato de cada piscina
-        evat_ultima_semana_df = group_and_get_last_week_by_pool(evat_consolidado)
+        if len(evat_ultima_semana_df) == 0:
+            return pd.DataFrame, MESSAGE_ERROR_NULLS
         # filtramos solo piscinas actualizadas
         # print("AA", evat_ultima_semana_df.shape)
         # print(evat_ultima_semana_df)
@@ -157,12 +181,15 @@ def get_projections(
             "Días faltantes para lograr el peso del proyecto"
         ]
         evat_df = generate_proyection(
+            farm_name,
             evat_df,
             project_survival,
             project_duration,
             precios_df,
             distribucion_tallas_df,
             is_using_lineal_feed=is_using_lineal_feed,
+            is_using_dynamical_feed=is_using_dynamical_feed,
+            empty_days=empty_days,
             percentage_dynamical_feed=percentage_dynamical_feed,
             is_using_sob_campo=is_using_sob_campo,
             percentage_sob=percentage_sob,
@@ -178,6 +205,7 @@ def get_projections(
                 evat_df["Días restantes para cumplir proyecto"] + 1
             )
             evat_df = generate_proyection(
+                farm_name,
                 evat_df,
                 project_survival,
                 project_duration,
@@ -185,6 +213,8 @@ def get_projections(
                 distribucion_tallas_df,
                 dias_ciclo_finales=1,
                 is_using_lineal_feed=is_using_lineal_feed,
+                is_using_dynamical_feed=is_using_dynamical_feed,
+                empty_days=empty_days,
                 percentage_dynamical_feed=percentage_dynamical_feed,
                 is_using_sob_campo=is_using_sob_campo,
                 percentage_sob=percentage_sob,
@@ -205,6 +235,7 @@ def get_projections(
                 evat_df["Días restantes para cumplir proyecto"] - 1
             )
             evat_df = generate_proyection(
+                farm_name,
                 evat_df,
                 project_survival,
                 project_duration,
@@ -212,6 +243,8 @@ def get_projections(
                 distribucion_tallas_df,
                 dias_ciclo_finales=-1,
                 is_using_lineal_feed=is_using_lineal_feed,
+                is_using_dynamical_feed=is_using_dynamical_feed,
+                empty_days=empty_days,
                 percentage_dynamical_feed=percentage_dynamical_feed,
                 is_using_sob_campo=is_using_sob_campo,
                 percentage_sob=percentage_sob,
@@ -311,7 +344,14 @@ def get_projections(
         proyecciones_df["precio_venta_lbs_con_rendimiento"] = (
             proyecciones_df["precio_venta_lbs"] * 0.95
         )
+        if len(proyecciones_df) > 0:
+            return proyecciones_df, "Proyecciones generadas con éxito."
+        else:
+            return proyecciones_df, MESSAGE_ERROR_NULLS
     else:
         # si no hay datos retornamos vacio
         proyecciones_df = data_df
-    return proyecciones_df
+        return (
+            proyecciones_df,
+            "Para este campo no existen datos de piscinas actualizadas en los últimos 30 días.",
+        )
